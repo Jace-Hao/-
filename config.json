@@ -1,0 +1,98 @@
+{
+  "window": {
+    "title_keyword": "洗衣管家",
+    "title_full_hint": "星期衣精致洗衣",
+    "activate_timeout": 5.0,
+    "coords_mode": "window"
+  },
+  "cdp": {
+    "enabled": true,
+    "auto_start": true,
+    "port": 9222,
+    "app_exe": "D:\\Blending_Release-6.1.17\\xygjwinapp.exe",
+    "app_dir": "D:\\Blending_Release-6.1.17",
+    "start_wait": 30,
+    "routes": {
+      "home": "#/",
+      "more": "#/more",
+      "photo": "#/clothManage/photograph?moduleid=3&templetid=3007&layoutType=1"
+    }
+  },
+  "points": {
+    "barcode_input": [
+      433,
+      303
+    ],
+    "more_button": [
+      4,
+      1195
+    ],
+    "photo_button": [
+      326,
+      968
+    ],
+    "upload_button": [
+      2252,
+      1300
+    ],
+    "more_card": [
+      2217,
+      1085
+    ],
+    "dialog_filename": [
+      536,
+      652
+    ]
+  },
+  "anchors": {
+    "enabled": true,
+    "upload_button": "",
+    "photo_button": "",
+    "more_button": "",
+    "more_card": "",
+    "barcode_input": "",
+    "dialog_filename": "",
+    "page_home": "anchors\\page_home.png",
+    "page_home_b": "anchors/page_home_b.png",
+    "page_more": "anchors\\page_more.png",
+    "page_more_b": "anchors/page_more_b.png",
+    "page_photo": "anchors\\page_photo.png",
+    "page_photo_b": "anchors/page_photo_b.png"
+  },
+  "timing": {
+    "after_activate": 0.6,
+    "after_click": 0.6,
+    "after_enter": 1.5,
+    "after_upload_click": 1.2,
+    "dialog_timeout": 8.0,
+    "after_path_enter": 1.0,
+    "after_select_all": 1.0,
+    "between_rows": 1.0,
+    "step_retry_cycles": 3,
+    "speed_factor": 1.0
+  },
+  "dialog": {
+    "title_keywords": [
+      "打开",
+      "Open",
+      "选择",
+      "上传"
+    ],
+    "use_standard_dialog": true,
+    "select_all_hotkey": "ctrl+a"
+  },
+  "options": {
+    "check_folder_exists": true,
+    "stop_on_error": false,
+    "screenshot_on_error": true,
+    "export_xlsx": true,
+    "warmup_nav": true,
+    "dry_run": false,
+    "strict_dialog_check": true,
+    "skip_if_has_photos": true
+  },
+  "recent": {
+    "last_csv": "E:/桌面/新建文件夹/导出清单_2026-09-16_2026-09-16.csv"
+  },
+  "_note_bad_calibration_cleared": "2026-09-18：旧校准数据在错误的参照窗口上换算（含负坐标），已清空，需重新校准。"
+}

@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+# 洗衣管家 · 照片批量上传助手 — 依赖清单
+#
+# 安装（推荐使用 py 启动器指向的 Python 3.10+）：
+#   py -3 -m pip install -r requirements.txt
+#
+# Windows 系统说明：
+#   - tkinter 为 Python 自带（安装 Python 时需勾选 tcl/tk，一般默认自带）。
+#   - 以下前两项为必需；后三项为增强/可选，缺失时程序仍可运行（功能略减）。
+
+pyautogui>=0.9.54        # 鼠标键盘自动化（必需）
+pyperclip>=1.8           # 剪贴板（用于粘贴中文/条码，必需/强烈建议）
+pygetwindow>=0.0.9       # 窗口查找与激活（必需/强烈建议）
+pillow>=9.0              # 截图（pyautogui 依赖，必需）
+opencv-python>=4.5       # 图像锚点匹配增强（可选，强烈建议）
+keyboard>=0.13           # F12 全局急停热键（可选）
+openpyxl>=3.0            # 导出 Excel 结果（可选）
