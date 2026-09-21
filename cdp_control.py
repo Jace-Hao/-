@@ -311,58 +311,74 @@ class CDPApp:
             time.sleep(interval)
         return last if last is not None else 0
 
-    def upload_files(self, paths):
-        """把本地文件直接注入上传输入框（等价于用户在文件对话框中选中这些文件）。"""
-        mark = (
-            "JSON.stringify((function(){"
-            "var fis=document.querySelectorAll('input[type=file]');"
-            "var target=null;"
-            "for(var i=0;i<fis.length;i++){"
-            " if(fis[i].closest && fis[i].closest('.photo_content')){target=fis[i];break;}}"
-            "if(!target){for(var i=0;i<fis.length;i++){if(fis[i].multiple){target=fis[i];break;}}}"
-            "if(!target&&fis.length){target=fis[0];}"
-            "if(!target)return{ok:false};"
-            "[].slice.call(document.querySelectorAll('[data-cdp-up]')).forEach(function(e){"
-            " e.removeAttribute('data-cdp-up');});"
-            "target.setAttribute('data-cdp-up','1');"
-            "return{ok:true,count:fis.length};"
-            "})())")
+    def get_upload_button_rect(self):
+        """返回「上传图片」按钮（p.upload_btn）中心点视口坐标；找不到返回 None。"""
+        js = ("JSON.stringify((function(){var e=document.querySelector('p.upload_btn');"
+              "if(!e||!(e.offsetWidth||e.offsetHeight))return null;"
+              "var r=e.getBoundingClientRect();"
+              "return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)};})())")
         try:
-            r = self.ev(mark)
-        except CDPError as e:
-            return False, f"标记上传输入框失败：{e}"
+            v = self.ev(js)
+        except CDPError:
+            return None
         try:
-            if not json.loads(r).get("ok"):
-                return False, "页面上未找到上传输入框"
+            return json.loads(v) if isinstance(v, str) else None
         except Exception:
-            return False, "标记上传输入框失败"
-        doc = self._call("DOM.getDocument", {"depth": 0})
-        root = doc.get("root", {}).get("nodeId")
-        q = self._call("DOM.querySelector", {"nodeId": root, "selector": "input[data-cdp-up]"})
-        nid = q.get("nodeId")
-        if not nid:
-            return False, "未定位到上传输入框节点"
-        self._call("DOM.setFileInputFiles", {"files": list(paths), "nodeId": nid}, timeout=30)
-        return True, "ok"
+            return None
 
-    def wait_upload_feedback(self, timeout=15, base_count=None):
-        """等待上传结果信号：成功提示 / 失败提示 / 缩略图数量增加。返回 (ok, 描述)。"""
+    def click_upload_button_trusted(self):
+        """用 CDP Input 域对「上传图片」按钮发送受信任点击（模拟真实用户点击，
+        可触发 CefSharp 打开系统文件对话框）。
+        注意：对话框一旦打开，渲染进程即被阻塞、CDP 响应会超时，
+        因此这里 fire-and-forget（只发不读）。返回 True 表示事件已发出。"""
+        rect = self.get_upload_button_rect()
+        if not rect:
+            return False
+        for evt, extra in (("mouseMoved", {}),
+                           ("mousePressed", {"button": "left", "clickCount": 1}),
+                           ("mouseReleased", {"button": "left", "clickCount": 1})):
+            self._mid += 1
+            msg = {"id": self._mid, "method": "Input.dispatchMouseEvent",
+                   "params": dict({"type": evt, "x": rect["x"], "y": rect["y"]}, **extra)}
+            sent = False
+            for _attempt in (1, 2):
+                try:
+                    self.ws.send(json.dumps(msg))
+                    sent = True
+                    break
+                except Exception:
+                    try:
+                        self._reconnect()
+                    except Exception:
+                        break
+            if not sent:
+                return False
+            time.sleep(0.1)
+        return True
+
+    def _reconnect(self):
+        """重连当前页面。"""
+        try:
+            self.close()
+        except Exception:
+            pass
+        ok, _info = self.connect()
+        return ok
+
+    def wait_upload_complete(self, base_count, expected, timeout=60):
+        """等待页面出现新增照片（上传完成的判断信号）。
+        返回 (ok, 描述)。成功条件：页面照片数 >= 原有 + 本次文件数。"""
         end = time.time() + timeout
-        last_toasts = []
+        last = base_count
         while time.time() < end:
-            toasts = self.visible_toasts()
-            for t in toasts:
-                if "成功" in t:
-                    return True, f"提示：{t}"
-                if "失败" in t or "错误" in t:
-                    return False, f"提示：{t}"
-            if toasts:
-                last_toasts = toasts
-            if base_count is not None and base_count >= 0:
-                c = self.image_count()
-                if c > base_count:
-                    return True, f"缩略图数量 {base_count} → {c}"
-            time.sleep(0.4)
-        if last_toasts:
-            return False, f"未确认成功，最近提示：{last_toasts[-1]}"
-        return False, "未观察到上传成功/失败信号"
+            try:
+                c = self.uploaded_photo_count()
+            except Exception:
+                c = last
+            last = c
+            if c >= base_count + expected:
+                return True, f"已新增 {c - base_count} 张照片"
+            time.sleep(1.0)
+        if last > base_count:
+            return False, f"疑似部分完成：仅新增 {last - base_count}/{expected} 张，请人工核对"
+        return False, "未观察到新增照片（上传可能未开始或未完成）"

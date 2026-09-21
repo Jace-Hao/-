@@ -271,7 +271,7 @@
       </ul>
     </nav>
     <div class="foot">
-      v1.2 · 2026-09-21<br>
+      v1.3 · 2026-09-21<br>
       依据《绘图1》流程图<br>与《导出清单》格式编写
     </div>
   </aside>
@@ -285,7 +285,7 @@
       <h1>洗衣管家 · 照片批量上传助手</h1>
       <div class="subtitle">导入清单 → 自动识别 → 自动操作洗衣管家上传照片 → 输出执行结果</div>
       <div class="meta-row">
-        <div class="meta-item"><div class="k">版本</div><div class="v">v1.2</div></div>
+        <div class="meta-item"><div class="k">版本</div><div class="v">v1.3</div></div>
         <div class="meta-item"><div class="k">运行环境</div><div class="v">Windows 10/11 · Python 3.10+</div></div>
         <div class="meta-item"><div class="k">依据资料</div><div class="v">绘图1 操作流程图 · 导出清单 CSV</div></div>
         <div class="meta-item"><div class="k">日期</div><div class="v">2026-09-21</div></div>
@@ -311,7 +311,7 @@
         <p>几个关键设计，是为了在你店里真实可用：</p>
         <ul>
           <li><strong>不靠固定死坐标</strong> —— 支持“窗口相对坐标”与“图像锚点”两种定位方式，窗口挪动后程序仍能找到按钮；</li>
-          <li><strong>精准模式（调试端口）</strong> —— 软件带调试端口运行时，程序直接按内部路由识别页面、写入条码、注入照片文件上传（无弹窗）；并自动跳过已有照片的订单，防止重复上传；</li>
+          <li><strong>精准模式（调试端口）</strong> —— 软件带调试端口运行时，程序直接按内部路由识别页面、写入条码、自动打开「选择图片」文件框、选中该订单全部照片后确认上传（与人工操作一致，照片多时自动分批）；并自动跳过已有照片的订单，防止重复上传；</li>
           <li><strong>调试模式自动保障</strong> —— 每次运行前自动检查：软件没开就自动以调试模式启动；开着但没带调试参数会询问后自动重启；都不可行时自动退回兼容模式；</li>
           <li><strong>随时可停</strong> —— 界面【停止】按钮之外，鼠标猛甩到屏幕左上角、或按 F12 都能紧急停下；</li>
           <li><strong>先测一条</strong> —— 【测试第一条】只跑第一行，确认无误后再整批执行；</li>

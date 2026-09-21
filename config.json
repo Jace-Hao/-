@@ -16,7 +16,8 @@
       "home": "#/",
       "more": "#/more",
       "photo": "#/clothManage/photograph?moduleid=3&templetid=3007&layoutType=1"
-    }
+    },
+    "force_restart": true
   },
   "points": {
     "barcode_input": [
@@ -73,10 +74,9 @@
   },
   "dialog": {
     "title_keywords": [
+      "选择图片",
       "打开",
-      "Open",
-      "选择",
-      "上传"
+      "Open"
     ],
     "use_standard_dialog": true,
     "select_all_hotkey": "ctrl+a"

@@ -76,7 +76,7 @@ def default_config():
             "speed_factor": 1.0         # 全局速度倍率（>1 更慢更稳）
         },
         "dialog": {
-            "title_keywords": ["打开", "Open", "选择", "上传"],
+            "title_keywords": ["选择图片", "打开", "Open"],
             "use_standard_dialog": True,  # 标准 Windows 打开对话框流程：粘贴路径→回车→Ctrl+A→回车
             "select_all_hotkey": "ctrl+a"
         },

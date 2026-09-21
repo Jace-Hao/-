@@ -43,6 +43,15 @@ try:
 except Exception:  # pragma: no cover
     gw = None
 
+import ctypes
+
+try:
+    import win32gui
+    import win32con
+    import win32api
+except Exception:  # pragma: no cover
+    win32gui = win32con = win32api = None
+
 pyautogui.FAILSAFE = True          # 鼠标甩到屏幕左上角 = 紧急停止
 pyautogui.PAUSE = 0.03
 
@@ -752,6 +761,177 @@ class AutomationEngine:
         return [os.path.join(folder, n) for n in names
                 if n.lower().endswith(exts) and os.path.isfile(os.path.join(folder, n))]
 
+    # ---------------- 精准模式：文件对话框操作 ----------------
+    def _find_select_dialog(self, timeout=10):
+        """等待「选择图片」文件对话框出现（#32770 + 标题关键词）。"""
+        if win32gui is None:
+            return None
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if self.ctrl.stopped:
+                return None
+            hits = []
+
+            def _cb(h, _):
+                try:
+                    if win32gui.IsWindowVisible(h):
+                        c = win32gui.GetClassName(h)
+                        t = win32gui.GetWindowText(h)
+                        if c == "#32770" and ("选择图片" in t or "打开" in t or "Open" in t):
+                            hits.append(h)
+                except Exception:
+                    pass
+                return True
+
+            try:
+                win32gui.EnumWindows(_cb, None)
+            except Exception:
+                pass
+            if hits:
+                return hits[0]
+            time.sleep(0.4)
+        return None
+
+    def _dialog_open(self, hwnd):
+        try:
+            return bool(hwnd) and bool(win32gui.IsWindow(hwnd))
+        except Exception:
+            return False
+
+    def _wait_dialog_closed(self, hwnd, seconds):
+        end = time.time() + seconds
+        while time.time() < end:
+            if not self._dialog_open(hwnd):
+                return True
+            time.sleep(0.4)
+        return not self._dialog_open(hwnd)
+
+    def _force_foreground_hwnd(self, hwnd):
+        """用 AttachThreadInput 绕过前台锁，把窗口强制带到前台。"""
+        if win32gui is None:
+            return False
+        try:
+            user32 = ctypes.windll.user32
+            fg = user32.GetForegroundWindow()
+            tid_fg = user32.GetWindowThreadProcessId(fg, None)
+            tid_me = win32api.GetCurrentThreadId()
+            user32.AttachThreadInput(tid_fg, tid_me, True)
+            user32.ShowWindow(hwnd, 5)
+            user32.BringWindowToTop(hwnd)
+            user32.SetForegroundWindow(hwnd)
+            user32.AttachThreadInput(tid_fg, tid_me, False)
+            time.sleep(0.35)
+            return int(user32.GetForegroundWindow()) == int(hwnd)
+        except Exception:
+            return False
+
+    def _select_files_in_dialog(self, hwnd, files, folder):
+        """在「选择图片」对话框中选中文件（多级尝试）：
+        1) 粘贴「带引号的多文件全路径」+ 回车（首选，一次到位）
+        2) 清掉可能的小弹窗后再试一次
+        3) 文件夹路径导航 + 点列表空白 + 全选 + 回车（最后手段）"""
+        quoted = " ".join('"%s"' % f for f in files)
+        for attempt in (1, 2):
+            if not self._dialog_open(hwnd):
+                return True
+            if attempt == 2:
+                self._force_foreground_hwnd(hwnd)
+                pyautogui.press("enter")          # 清掉可能残留的小弹窗
+                time.sleep(0.7)
+                if not self._dialog_open(hwnd):
+                    return True
+            self._force_foreground_hwnd(hwnd)
+            if pyperclip is not None:
+                pyperclip.copy(quoted)
+                time.sleep(0.25)
+                pyautogui.hotkey("ctrl", "a")
+                time.sleep(0.15)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(0.8)
+                pyautogui.press("enter")
+            else:
+                pyautogui.write(folder, interval=0.02)
+                time.sleep(0.3)
+                pyautogui.press("enter")
+            if self._wait_dialog_closed(hwnd, 5):
+                return True
+        # 尝试 3：导航文件夹方式
+        if self._dialog_open(hwnd):
+            self.log("    对话框未关闭，尝试“导航文件夹 + 全选”方式…")
+            self._force_foreground_hwnd(hwnd)
+            if pyperclip is not None:
+                pyperclip.copy(folder)
+                time.sleep(0.25)
+                pyautogui.hotkey("ctrl", "a")
+                time.sleep(0.15)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(0.8)
+                pyautogui.press("enter")          # 进入文件夹
+                time.sleep(1.6)
+                try:
+                    r = win32gui.GetWindowRect(hwnd)
+                    ex = r[0] + int((r[2] - r[0]) * 0.30)
+                    ey = r[1] + int((r[3] - r[1]) * 0.72)
+                    pyautogui.click(ex, ey)       # 点列表下部空白处，聚焦文件列表
+                    time.sleep(0.4)
+                    pyautogui.hotkey("ctrl", "a")
+                    time.sleep(0.4)
+                    pyautogui.press("enter")
+                except Exception:
+                    pass
+                if self._wait_dialog_closed(hwnd, 6):
+                    return True
+        return False
+
+    def _chunk_files_by_length(self, files, limit=240):
+        """按“文件名框长度上限”把文件分批（每批带引号全路径串 ≤ limit 字符）。
+        实测「选择图片」对话框文件名框会截断超长文本（约 259 字符），故必须分批。"""
+        chunks, cur, cur_len = [], [], 0
+        for f in files:
+            q = len(f) + 2                 # 两侧引号
+            need = q + (1 if cur else 0)   # 分隔空格
+            if cur and cur_len + need > limit:
+                chunks.append(cur)
+                cur, cur_len = [], 0
+                need = q
+            cur.append(f)
+            cur_len += need
+        if cur:
+            chunks.append(cur)
+        return chunks
+
+    def _open_upload_dialog_cdp(self):
+        """受信任点击「上传图片」并等待对话框；返回对话框 hwnd 或 None。"""
+        if self.cdp is None or win32gui is None:
+            return None
+        if not self.cdp.click_upload_button_trusted():
+            return None
+        return self._find_select_dialog(timeout=10)
+
+    def _open_upload_dialog_mouse(self):
+        """鼠标兜底：真实点击「上传图片」按钮（窗口坐标 + 视口坐标）。"""
+        if self.cdp is None or win32gui is None or gw is None:
+            return None
+        try:
+            rect = self.cdp.get_upload_button_rect()
+            if not rect:
+                return None
+            wins = gw.getAllWindows()
+            win = pick_best_window(wins, self.cfg["window"].get("title_keyword", "洗衣管家"))
+            if win is None:
+                return None
+            try:
+                win.activate()
+            except Exception:
+                pass
+            time.sleep(0.4)
+            sx = int(win.left) + int(rect["x"])
+            sy = int(win.top) + int(rect["y"])
+            pyautogui.click(sx, sy)
+        except Exception:
+            return None
+        return self._find_select_dialog(timeout=8)
+
     def _run_one_cdp(self, task):
         """通过调试协议执行一条记录（精准模式）；演练时执行完整“预检查”。"""
         cdp = self.cdp
@@ -790,37 +970,37 @@ class AutomationEngine:
                 return True, f"跳过：订单已有 {existing} 张照片，未重复上传"
             return True, (f"跳过：订单已有 {existing} 张、本地 {len(files)} 张，"
                           "疑似未传完未行动，请人工核对")
-        base_cnt = cdp.image_count()
-        ok, info = cdp.upload_files(files)
-        if not ok:
-            # 兜底：点击“上传图片”按钮 + 系统文件对话框
-            self.log(f"    文件注入未成功（{info}），改用“上传图片 + 文件对话框”兜底…")
-            cres = cdp.click_text("上传图片", exact=True)
-            if not (isinstance(cres, dict) and cres.get("ok")):
-                raise StepError(f"上传失败：注入不可用且未找到「上传图片」按钮（{info}）")
-            self.sleep(1.2)
-            if not self._wait_dialog(timeout=8):
-                raise StepError("文件对话框未出现（兜底路径）")
-            if pyperclip is not None:
-                pyperclip.copy(task.folder)
-                time.sleep(0.12)
-                pyautogui.hotkey("ctrl", "v")
+        # —— 打开「选择图片」文件对话框 → 选择文件 → 等待上传 ——
+        # 注：对话框“文件名”输入框有长度上限（实测约 259 字符），
+        #     带引号的全路径串过长会被截断，因此按长度分批上传。
+        chunks = self._chunk_files_by_length(files)
+        done_cnt = 0
+        for ci, chunk in enumerate(chunks, 1):
+            if len(chunks) > 1:
+                self.log(f"    第 {ci}/{len(chunks)} 批（{len(chunk)} 张）：正在打开文件选择对话框…")
             else:
-                pyautogui.write(task.folder, interval=0.02)
-            time.sleep(0.2)
-            pyautogui.press("enter")
-            self.sleep(1.0)
-            pyautogui.hotkey("ctrl", "a")
-            time.sleep(0.25)
-            pyautogui.press("enter")
-            self.sleep(1.2)
-        else:
-            self.log(f"    已注入 {len(files)} 个文件，等待上传结果…")
-        ok2, info2 = cdp.wait_upload_feedback(timeout=15, base_count=base_cnt)
-        if not ok2:
-            raise StepError(f"上传结果未确认：{info2}")
-        self.log(f"    上传结果：{info2}")
-        return True, f"完成（调试模式，{len(files)} 张）"
+                self.log("    正在打开文件选择对话框…")
+            dlg = self._open_upload_dialog_cdp()
+            if not dlg:
+                self.log("    受信任点击未出现对话框，改用鼠标点击重试…")
+                dlg = self._open_upload_dialog_mouse()
+            if not dlg:
+                raise StepError(f"未能打开「选择图片」文件对话框（已传 {done_cnt}/{len(files)} 张）")
+            self.log("    文件对话框已打开，正在选择文件…")
+            if not self._select_files_in_dialog(dlg, chunk, task.folder):
+                try:
+                    win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
+                except Exception:
+                    pass
+                raise StepError(f"文件对话框未能完成选择（已传 {done_cnt}/{len(files)} 张）")
+            self.log("    文件已提交，等待上传完成…")
+            ok2, info2 = cdp.wait_upload_complete(existing + done_cnt, len(chunk), timeout=90)
+            if not ok2:
+                raise StepError(f"上传未完成：{info2}（已完成 {done_cnt}/{len(files)} 张，请人工核对）")
+            done_cnt += len(chunk)
+            self.log(f"    本批完成：{info2}")
+            time.sleep(0.8)
+        return True, f"完成（精准模式，{len(files)} 张）"
 
     # ---------------- 批量执行 ----------------
     def run_batch(self, tasks, on_row_start=None, on_row_done=None, only_first=False):
