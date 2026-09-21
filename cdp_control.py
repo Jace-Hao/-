@@ -95,13 +95,30 @@ class CDPApp:
         raise CDPError(f"{method} 调用超时")
 
     def ev(self, expr, timeout=20):
-        res = self._call("Runtime.evaluate",
-                         {"expression": expr, "returnByValue": True,
-                          "awaitPromise": True}, timeout=timeout)
-        r = res.get("result", {})
-        if r.get("subtype") == "error":
-            raise CDPError(str(r.get("description", ""))[:200])
-        return r.get("value")
+        """执行 JS 表达式。超时时自动重连并重试一次（防止对话框阻塞造成硬崩）。"""
+        last = None
+        for _attempt in (1, 2):
+            try:
+                res = self._call("Runtime.evaluate",
+                                 {"expression": expr, "returnByValue": True,
+                                  "awaitPromise": True}, timeout=timeout)
+                r = res.get("result", {})
+                if r.get("subtype") == "error":
+                    raise CDPError(str(r.get("description", ""))[:200])
+                return r.get("value")
+            except Exception as e:
+                last = e
+                emsg = (str(e) or '') + type(e).__name__
+                low = emsg.lower()
+                if ('timeout' in low) or ('timed out' in low) or ('超时' in emsg):
+                    try:
+                        self._reconnect()
+                        time.sleep(0.4)
+                    except Exception:
+                        pass
+                    continue
+                raise
+        raise CDPError(f"调试调用超时：{last}")
 
     # ---------------- 状态识别 ----------------
     def get_hash(self):

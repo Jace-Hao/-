@@ -956,6 +956,37 @@ class AutomationEngine:
             time.sleep(0.4)
         return ed, btn
 
+    def _edit_get_text(self, hwnd, size=600):
+        """读取 Edit 控件文本（跨进程 WM_GETTEXT，兼容中文，用于校验）。"""
+        try:
+            buf = ctypes.create_unicode_buffer(size)
+            n = ctypes.windll.user32.SendMessageW(hwnd, win32con.WM_GETTEXT, size, buf)
+            return buf.value
+        except Exception:
+            return None
+
+    def _verify_filename_box(self, ed, quoted):
+        """校验文件名框内容：WM_GETTEXT 优先；失败时用“清空剪贴板→复制→读回”兑底。
+        注：必须先清空剪贴板，否则“复制失败”时会残留旧内容造成假阳性。"""
+        if ed:
+            for _i in range(8):
+                got = self._edit_get_text(ed)
+                if got == quoted:
+                    return True
+                time.sleep(0.15)
+        try:
+            if pyperclip is not None:
+                pyperclip.copy('')
+                time.sleep(0.1)
+                pyautogui.hotkey("ctrl", "a")
+                time.sleep(0.12)
+                pyautogui.hotkey("ctrl", "c")
+                time.sleep(0.45)
+                return pyperclip.paste() == quoted
+        except Exception:
+            pass
+        return False
+
     def _select_files_by_message(self, hwnd, quoted, rounds=2):
         """首选通道：WM_SETTEXT 直写文件名框 + BM_CLICK「打开」按钮。
         不依赖前台焦点与键盘，对偶发焦点失灵免疫。
@@ -972,7 +1003,18 @@ class AutomationEngine:
             except Exception as e:
                 self.log(f"    [消息通道] 写入失败：{e!r}")
                 return False
-            time.sleep(0.35)
+            time.sleep(0.25)
+            got = self._edit_get_text(ed)
+            if got != quoted:
+                try:
+                    win32gui.SendMessage(ed, win32con.WM_SETTEXT, 0, quoted)
+                except Exception:
+                    pass
+                time.sleep(0.25)
+                got = self._edit_get_text(ed)
+            if got != quoted:
+                self.log("    [消息通道] 写入后校验未通过（将改用备用方式）")
+                return False
             if btn:
                 try:
                     win32gui.SendMessage(btn, win32con.BM_CLICK, 0, 0)
@@ -1006,6 +1048,7 @@ class AutomationEngine:
         # ----兜底 1：剪贴板 + 键盘（带校验重试）----
         self._dlg_focus_click(hwnd)
         self._force_foreground_hwnd(hwnd)
+        ed_v, _btn_v = self._pick_dialog_controls(hwnd, timeout=2)
 
         attempts = [("直接粘贴", None), ("点击文件名框", (0.30, 58)), ("Alt+N", None)]
         for mode, arg in attempts:
@@ -1035,8 +1078,11 @@ class AutomationEngine:
             if not self._clipboard_set(quoted):
                 self.log("    [警告] 剪贴板写入失败，重试…")
                 continue
-            got = self._paste_readback()
-            ok = (got == quoted)
+            pyautogui.hotkey("ctrl", "a")
+            time.sleep(0.12)
+            pyautogui.hotkey("ctrl", "v")
+            time.sleep(0.7)
+            ok = self._verify_filename_box(ed_v, quoted)
             if ok:
                 self.log(f"    文件名框校验：成功（{mode}）")
                 for _j in range(2):
@@ -1208,7 +1254,13 @@ class AutomationEngine:
                         win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
                     except Exception:
                         pass
-                    time.sleep(0.8)
+                    if not self._wait_dialog_closed(dlg, 5):
+                        try:
+                            win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
+                        except Exception:
+                            pass
+                        if not self._wait_dialog_closed(dlg, 4):
+                            raise StepError("文件对话框无法关闭（请手动关闭后重试），本条停止")
                     self.log("    对话框操作未成功，关闭后重开重试一次…")
                     dlg = self._open_upload_dialog_cdp()
                     if not dlg:

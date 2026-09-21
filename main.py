@@ -48,7 +48,7 @@ from config_io import load_config, save_config
 from csv_import import import_list, TaskRecord
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.5"
+VERSION = "1.6"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
@@ -378,10 +378,51 @@ class App(tk.Tk):
         except Exception:
             pass
 
+    def _proc_il_value(self, pid):
+        """取进程完整性级别数值（12288=管理员，8192=普通）。"""
+        try:
+            import win32api, win32security
+            h = win32api.OpenProcess(0x1000, False, pid)
+            tok = win32security.OpenProcessToken(h, win32security.TOKEN_QUERY)
+            sid, _ = win32security.GetTokenInformation(tok, win32security.TokenIntegrityLevel)
+            s = win32security.ConvertSidToStringSid(sid)
+            return int(s.rsplit('-', 1)[1])
+        except Exception:
+            return None
+
+    def _app_pid(self):
+        r = _run_hidden(['tasklist', '/FI', f'IMAGENAME eq {self._app_image_name()}', '/FO', 'CSV', '/NH'])
+        if r is None:
+            return None
+        txt = (r.stdout or b'').decode('gbk', errors='ignore')
+        for line in txt.splitlines():
+            parts = [x.strip('"') for x in line.split('","')]
+            if len(parts) >= 2 and parts[1].isdigit():
+                return int(parts[1])
+        return None
+
+    def _check_integrity_hint(self):
+        """检查本工具与洗衣管家的权限级别；不匹配时给出明确提示（防止再被 UIPI 拦截）。"""
+        try:
+            il_self = self._proc_il_value(os.getpid())
+            pid = self._app_pid()
+            il_app = self._proc_il_value(pid) if pid else None
+        except Exception:
+            return
+        names = {4096: '低', 8192: '普通', 12288: '管理员', 16384: '系统'}
+        self.log(f"权限自检：本工具={names.get(il_self, il_self)}；洗衣管家={names.get(il_app, il_app)}")
+        if il_self and il_app and il_app > il_self:
+            messagebox.showwarning(
+                "权限不匹配（需以管理员身份运行本工具）",
+                "检测到「洗衣管家」以管理员权限运行，而本工具是普通权限。\n"
+                "Windows 会阻止普通权限程序操作管理员程序（表现为：选照片弹窗填不了内容）。\n\n"
+                "请关闭本工具，改用桌面快捷方式重新打开（v1.6 起已内置管理员启动），再执行。")
+
     def ensure_debug_ready_for_run(self):
         """每次运行前确保洗衣管家处于调试模式；返回 'debug' 或 'fallback'。
         流程：端口可用→直接精准；已开但无参数→确认后关闭（正常→强制）→带参启动；
         全程刷新界面日志，最多两次启动尝试。"""
+        self._check_integrity_hint()
         cdp_cfg = self.cfg.get("cdp", {}) or {}
         if not cdp_cfg.get("enabled", True) or not cdp_cfg.get("auto_start", True):
             alive = self._cdp_port_alive()
