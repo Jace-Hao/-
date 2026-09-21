@@ -31,6 +31,7 @@ def default_config():
             "app_dir": "D:\\Blending_Release-6.1.17",
             "start_wait": 30,               # 启动后等待调试端口就绪的最长秒数
             "force_restart": True,          # 正常关闭失败时自动强制结束进程（再重启）
+            "force_topmost": True,          # 上传阶段自动把洗衣管家置前+置顶（结束后还原）
             "routes": {
                 "home": "#/",
                 "more": "#/more",

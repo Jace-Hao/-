@@ -17,7 +17,8 @@
       "more": "#/more",
       "photo": "#/clothManage/photograph?moduleid=3&templetid=3007&layoutType=1"
     },
-    "force_restart": true
+    "force_restart": true,
+    "force_topmost": true
   },
   "points": {
     "barcode_input": [

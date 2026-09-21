@@ -880,30 +880,99 @@ class AutomationEngine:
             pass
         return res
 
-    def _select_files_by_message(self, hwnd, quoted, rounds=3):
+    def _app_window_hwnd(self):
+        """获取「洗衣管家」主窗口句柄（用于置顶/置前）。"""
+        if gw is None:
+            return None
+        try:
+            w = pick_best_window(gw.getAllWindows(), self.cfg["window"].get("title_keyword", "洗衣管家"))
+            if w is None:
+                return None
+            return int(getattr(w, "_hWnd", 0) or 0) or None
+        except Exception:
+            return None
+
+    def _app_set_topmost(self, topmost):
+        """把「洗衣管家」窗口设为/取消最顶层（HWND_TOPMOST）。"""
+        if win32gui is None:
+            return False
+        hwnd = self._app_window_hwnd()
+        if not hwnd:
+            return False
+        try:
+            flag = win32con.HWND_TOPMOST if topmost else win32con.HWND_NOTOPMOST
+            win32gui.SetWindowPos(hwnd, flag, 0, 0, 0, 0,
+                                  win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+            return True
+        except Exception:
+            return False
+
+    def _app_foreground_soft(self):
+        """软尝试把「洗衣管家」切到前台（失败不报错，仅返回 False）。"""
+        hwnd = self._app_window_hwnd()
+        if not hwnd:
+            return False
+        ok = self._force_foreground_hwnd(hwnd)
+        if not ok:
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+                ok = (int(ctypes.windll.user32.GetForegroundWindow()) == int(hwnd))
+            except Exception:
+                pass
+        return ok
+
+    def _dlg_set_topmost(self, hwnd):
+        """把对话框也设为最顶层（静默）。"""
+        try:
+            win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                                  win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+        except Exception:
+            pass
+
+    def _pick_dialog_controls(self, hwnd, timeout=6):
+        """挑出对话框的【文件名框】与【打开】按钮（等待控件就绪）。
+        文件名框识别：位于对话框下半部（y > 60% 高度）的最宽 Edit 控件。"""
+        end = time.time() + timeout
+        ed = None
+        btn = None
+        while time.time() < end:
+            kids = self._dlg_children(hwnd)
+            try:
+                dlg_r = win32gui.GetWindowRect(hwnd)
+                dlg_top, dlg_h = dlg_r[1], max(1, dlg_r[3] - dlg_r[1])
+            except Exception:
+                dlg_top, dlg_h = 0, 720
+            edits = [k for k in kids if k[1] == "Edit"]
+            bottom = [k for k in edits if k[3][1] > dlg_top + int(dlg_h * 0.6)]
+            pool = bottom if bottom else edits
+            if pool:
+                ed = max(pool, key=lambda k: k[3][2] - k[3][0])[0]
+            for k in kids:
+                if k[1] == "Button" and ("打开" in k[2] or "Open" in k[2]):
+                    btn = k[0]
+                    break
+            if ed and btn:
+                break
+            time.sleep(0.4)
+        return ed, btn
+
+    def _select_files_by_message(self, hwnd, quoted, rounds=2):
         """首选通道：WM_SETTEXT 直写文件名框 + BM_CLICK「打开」按钮。
         不依赖前台焦点与键盘，对偶发焦点失灵免疫。
         返回 True 表示对话框已被关闭（已触发接受）。"""
         for rd in range(1, rounds + 1):
             if not self._dialog_open(hwnd):
                 return True
-            kids = self._dlg_children(hwnd)
-            edits = [k for k in kids if k[1] == "Edit"]
-            btn = None
-            for k in kids:
-                if k[1] == "Button" and ("打开" in k[2] or "Open" in k[2]):
-                    btn = k[0]
-                    break
-            if not edits:
+            ed, btn = self._pick_dialog_controls(hwnd, timeout=4 if rd == 1 else 3)
+            if not ed:
                 self.log("    [消息通道] 未找到文件名输入框")
                 return False
-            ed = max(edits, key=lambda k: k[3][2] - k[3][0])[0]
             try:
                 win32gui.SendMessage(ed, win32con.WM_SETTEXT, 0, quoted)
             except Exception as e:
                 self.log(f"    [消息通道] 写入失败：{e!r}")
                 return False
-            time.sleep(0.4)
+            time.sleep(0.35)
             if btn:
                 try:
                     win32gui.SendMessage(btn, win32con.BM_CLICK, 0, 0)
@@ -914,7 +983,7 @@ class AutomationEngine:
                     win32gui.SendMessage(hwnd, win32con.WM_COMMAND, 1, 0)
                 except Exception:
                     pass
-            for _i in range(16):
+            for _i in range(10):
                 if not self._dialog_open(hwnd):
                     return True
                 time.sleep(0.5)
@@ -1022,15 +1091,17 @@ class AutomationEngine:
         return chunks
 
     def _open_upload_dialog_cdp(self):
-        """受信任点击「上传图片」并等待对话框（带重试）；返回对话框 hwnd 或 None。"""
+        """受信任点击「上传图片」并等待对话框（带重试+置前）；返回对话框 hwnd 或 None。"""
         if self.cdp is None or win32gui is None:
             return None
         for attempt in (1, 2, 3):
+            self._app_foreground_soft()
             if not self.cdp.click_upload_button_trusted():
                 time.sleep(1.0)
                 continue
             dlg = self._find_select_dialog(timeout=12)
             if dlg:
+                self._dlg_set_topmost(dlg)
                 return dlg
             self.log(f"    [重试] 对话框未出现（第 {attempt} 次）")
             time.sleep(1.5)
@@ -1064,6 +1135,7 @@ class AutomationEngine:
                 return None
             dlg = self._find_select_dialog(timeout=10)
             if dlg:
+                self._dlg_set_topmost(dlg)
                 return dlg
             self.log(f"    [鼠标重试] 对话框未出现（第 {attempt} 次）")
             time.sleep(1.5)
@@ -1108,47 +1180,57 @@ class AutomationEngine:
             return True, (f"跳过：订单已有 {existing} 张、本地 {len(files)} 张，"
                           "疑似未传完未行动，请人工核对")
         # —— 打开「选择图片」文件对话框 → 选择文件 → 等待上传 ——
-        # 注：对话框“文件名”输入框有长度上限（实测约 259 字符），
-        #     带引号的全路径串过长会被截断，因此按长度分批上传。
+        # 注 1：文件名框有长度上限（实测约 259 字符），超长会截断，故按长度分批；
+        # 注 2：上传阶段自动把洗衣管家置前+置顶（避免软件在后台时对话框交互失灵），结束后还原。
         chunks = self._chunk_files_by_length(files)
-        done_cnt = 0
-        for ci, chunk in enumerate(chunks, 1):
-            if len(chunks) > 1:
-                self.log(f"    第 {ci}/{len(chunks)} 批（{len(chunk)} 张）：正在打开文件选择对话框…")
-            else:
-                self.log("    正在打开文件选择对话框…")
-            dlg = self._open_upload_dialog_cdp()
-            if not dlg:
-                self.log("    受信任点击未出现对话框，改用鼠标点击重试…")
-                dlg = self._open_upload_dialog_mouse()
-            if not dlg:
-                raise StepError(f"未能打开「选择图片」文件对话框（已传 {done_cnt}/{len(files)} 张）")
-            self.log("    文件对话框已打开，正在选择文件…")
-            if not self._select_files_in_dialog(dlg, chunk, task.folder):
-                # 整轮回退：关闭后重开一次再试
-                try:
-                    win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
-                except Exception:
-                    pass
-                time.sleep(0.8)
-                self.log("    对话框操作未成功，关闭后重开重试一次…")
+        use_topmost = bool((self.cfg.get("cdp", {}) or {}).get("force_topmost", True))
+        if use_topmost:
+            self._app_foreground_soft()
+            if self._app_set_topmost(True):
+                self.log("    已临时把洗衣管家置于最顶层（上传阶段）")
+        try:
+            done_cnt = 0
+            for ci, chunk in enumerate(chunks, 1):
+                if len(chunks) > 1:
+                    self.log(f"    第 {ci}/{len(chunks)} 批（{len(chunk)} 张）：正在打开文件选择对话框…")
+                else:
+                    self.log("    正在打开文件选择对话框…")
                 dlg = self._open_upload_dialog_cdp()
                 if not dlg:
+                    self.log("    受信任点击未出现对话框，改用鼠标点击重试…")
                     dlg = self._open_upload_dialog_mouse()
-                if not dlg or not self._select_files_in_dialog(dlg, chunk, task.folder):
+                if not dlg:
+                    raise StepError(f"未能打开「选择图片」文件对话框（已传 {done_cnt}/{len(files)} 张）")
+                self.log("    文件对话框已打开，正在选择文件…")
+                if not self._select_files_in_dialog(dlg, chunk, task.folder):
+                    # 整轮回退：关闭后重开一次再试
                     try:
                         win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
                     except Exception:
                         pass
-                    raise StepError(f"文件对话框未能完成选择（已传 {done_cnt}/{len(files)} 张）")
-            self.log("    文件已提交，等待上传完成…")
-            ok2, info2 = cdp.wait_upload_complete(existing + done_cnt, len(chunk), timeout=90)
-            if not ok2:
-                raise StepError(f"上传未完成：{info2}（已完成 {done_cnt}/{len(files)} 张，请人工核对）")
-            done_cnt += len(chunk)
-            self.log(f"    本批完成：{info2}")
-            time.sleep(1.2)
-        return True, f"完成（精准模式，{len(files)} 张）"
+                    time.sleep(0.8)
+                    self.log("    对话框操作未成功，关闭后重开重试一次…")
+                    dlg = self._open_upload_dialog_cdp()
+                    if not dlg:
+                        dlg = self._open_upload_dialog_mouse()
+                    if not dlg or not self._select_files_in_dialog(dlg, chunk, task.folder):
+                        try:
+                            win32gui.PostMessage(dlg, win32con.WM_CLOSE, 0, 0)
+                        except Exception:
+                            pass
+                        raise StepError(f"文件对话框未能完成选择（已传 {done_cnt}/{len(files)} 张）")
+                self.log("    文件已提交，等待上传完成…")
+                ok2, info2 = cdp.wait_upload_complete(existing + done_cnt, len(chunk), timeout=90)
+                if not ok2:
+                    raise StepError(f"上传未完成：{info2}（已完成 {done_cnt}/{len(files)} 张，请人工核对）")
+                done_cnt += len(chunk)
+                self.log(f"    本批完成：{info2}")
+                time.sleep(1.2)
+            return True, f"完成（精准模式，{len(files)} 张）"
+        finally:
+            if use_topmost:
+                if self._app_set_topmost(False):
+                    self.log("    已还原洗衣管家窗口层级")
 
     # ---------------- 批量执行 ----------------
     def run_batch(self, tasks, on_row_start=None, on_row_done=None, only_first=False):
