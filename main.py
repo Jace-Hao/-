@@ -48,7 +48,7 @@ from config_io import load_config, save_config
 from csv_import import import_list, TaskRecord
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.3"
+VERSION = "1.4"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
