@@ -20,6 +20,7 @@ import subprocess
 import threading
 import traceback
 import urllib.request
+import webbrowser
 
 if getattr(sys, "frozen", False):
     # PyInstaller 打包后：配置/锚点/输出都放在 exe 同级目录
@@ -47,9 +48,10 @@ from tkinter.scrolledtext import ScrolledText
 from config_io import load_config, save_config
 from csv_import import import_list, TaskRecord
 from ui_theme import PALETTE as C, FONTS, STATUS_COLORS, apply_theme
+import updater
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.7"
+VERSION = "1.8"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
@@ -91,6 +93,14 @@ class App(tk.Tk):
         self._setup_brand()
         self._build_ui()
         self._setup_hotkey()
+        # 在线更新状态
+        self.update_info = None
+        self.update_thread = None
+        self.update_bar = None
+        self.update_label = None
+        self.downloading = False
+        if self.cfg["options"].get("check_update_on_start", True):
+            self.after(1500, self._auto_check_update)
         self.after(120, self._drain_queue)
 
     # ================= UI =================
@@ -192,6 +202,8 @@ class App(tk.Tk):
                    command=self.on_open_config).pack(side="left", padx=(10, 0))
         ttk.Button(bottom, text="打开输出文件夹", style="Ghost.TButton",
                    command=lambda: self._open_path(self.result_dir)).pack(side="left", padx=(4, 0))
+        ttk.Button(bottom, text="检查更新", style="Ghost.TButton",
+                   command=self.on_check_update).pack(side="left", padx=(4, 0))
         ttk.Button(bottom, text="导出执行结果", style="Secondary.TButton",
                    command=self.on_export).pack(side="right")
 
@@ -306,6 +318,23 @@ class App(tk.Tk):
                     self.progress.configure(value=done)
                 elif kind == "done":
                     self._on_run_finished(payload)
+                elif kind == "update_result":
+                    self._on_update_result(payload)
+                elif kind == "update_source":
+                    i, n, host = payload
+                    tip = "（备用加速源）" if i > 1 else ""
+                    self.log(f"更新包下载源 {i}/{n}{tip}：{host}")
+                    self.status.set(f"更新包下载中（源 {i}/{n}）…")
+                elif kind == "update_progress":
+                    latest = (self.update_info or {}).get("latest", "?")
+                    if payload is None:
+                        self.status.set(f"正在下载 v{latest} …")
+                    else:
+                        self.status.set(f"正在下载 v{latest} … {payload}%")
+                elif kind == "update_file":
+                    self._on_update_file(payload)
+                elif kind == "update_error":
+                    self._on_update_error(payload)
         except queue.Empty:
             pass
         self.after(120, self._drain_queue)
@@ -895,6 +924,150 @@ class App(tk.Tk):
             except Exception as e:
                 self.log(f"[警告] 导出 Excel 失败：{e}")
         return paths
+
+    # ================= 在线更新 =================
+    def _auto_check_update(self):
+        """启动后静默检查更新（可在 config.json 关闭：options.check_update_on_start）。"""
+        if self.update_thread and self.update_thread.is_alive():
+            return
+        self.log("正在检查更新…")
+        self._start_update_check(mode="auto")
+
+    def on_check_update(self):
+        """手动检查更新（底部【检查更新】按钮）。"""
+        if self.update_thread and self.update_thread.is_alive():
+            self.status.set("正在检查更新…")
+            return
+        self.status.set("正在检查更新…")
+        self.log("正在检查更新（手动）…")
+        self._start_update_check(mode="manual")
+
+    def _start_update_check(self, mode):
+        def worker():
+            try:
+                info = updater.check_latest(VERSION)
+                self.msg_queue.put(("update_result", {"mode": mode, "error": None, "info": info}))
+            except Exception as e:
+                self.msg_queue.put(("update_result", {"mode": mode, "error": str(e), "info": None}))
+        self.update_thread = threading.Thread(target=worker, daemon=True)
+        self.update_thread.start()
+
+    def _on_update_result(self, res):
+        mode = (res or {}).get("mode")
+        err = (res or {}).get("error")
+        if err:
+            self.log(f"[警告] 检查更新失败：{err}")
+            if mode == "manual":
+                messagebox.showwarning("检查更新",
+                                       f"检查更新失败：\n{err}\n\n可稍后重试，或到 Releases 页面手动查看。")
+            else:
+                self.status.set("检查更新失败（不影响正常使用）。")
+            return
+        info = (res or {}).get("info") or {}
+        if info.get("found"):
+            self.update_info = info
+            self.log(f"发现新版本：v{info.get('latest')}（当前 v{VERSION}）。")
+            self._show_update_bar(info)
+            if mode == "manual":
+                if messagebox.askyesno("发现新版本",
+                                       f"发现新版本 v{info.get('latest')}（当前 v{VERSION}）。\n\n现在下载并安装吗？"):
+                    self._start_update_download()
+        else:
+            self.status.set(f"当前已是最新版本（v{VERSION}）。")
+            self.log(f"检查更新：已是最新版本（v{VERSION}）。")
+            if mode == "manual":
+                messagebox.showinfo("检查更新", f"当前已是最新版本（v{VERSION}）。")
+
+    def _show_update_bar(self, info):
+        if self.update_bar is None:
+            bar = tk.Frame(self, bg=C["accent_soft"])
+            self.update_label = tk.Label(bar, text="", bg=C["accent_soft"], fg=C["accent_ink"],
+                                         font=FONTS["ui"])
+            self.update_label.pack(side="left", padx=(14, 12), pady=5)
+            ttk.Button(bar, text="下载并安装", style="Primary.TButton",
+                       command=self._start_update_download).pack(side="left", pady=4)
+            ttk.Button(bar, text="更新说明", style="SoftGhost.TButton",
+                       command=self._open_release_page).pack(side="left", padx=(8, 0), pady=4)
+            ttk.Button(bar, text="稍后", style="SoftGhost.TButton",
+                       command=self._hide_update_bar).pack(side="right", padx=(0, 10), pady=4)
+            self.update_bar = bar
+        self.update_label.configure(
+            text=f"发现新版本 v{info.get('latest')}（当前 v{VERSION}），可一键下载并安装。")
+        if not self.update_bar.winfo_ismapped():
+            self.update_bar.pack(fill="x", padx=12, pady=(4, 0), after=self.lbl_steps)
+        self.status.set(f"发现新版本 v{info.get('latest')}。")
+
+    def _hide_update_bar(self):
+        if self.update_bar is not None:
+            self.update_bar.pack_forget()
+
+    def _open_release_page(self):
+        url = (self.update_info or {}).get("html_url") or updater.RELEASES_PAGE.format(repo=updater.GITHUB_REPO)
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            self.log(f"打开浏览器失败：{e}")
+
+    def _start_update_download(self):
+        if self.worker is not None and self.worker.is_alive():
+            messagebox.showinfo("提示", "当前正在执行任务，请等执行结束后再更新。")
+            return
+        info = self.update_info or {}
+        if not info.get("asset_url"):
+            if messagebox.askyesno("更新", "该版本没有可直接下载的安装包附件。\n是否打开 Releases 页面手动下载？"):
+                self._open_release_page()
+            return
+        if self.downloading:
+            self.status.set("更新包正在下载中…")
+            return
+        self.downloading = True
+        self.status.set(f"正在下载 v{info.get('latest')} …")
+        self.log(f"开始下载更新包：{info.get('asset_name')}")
+        mirrors = (self.cfg.get("update") or {}).get("mirrors", updater.DEFAULT_MIRRORS)
+
+        def worker():
+            try:
+                def cb(done, total):
+                    if total:
+                        self.msg_queue.put(("update_progress", int(done * 100 / total)))
+                    else:
+                        self.msg_queue.put(("update_progress", None))
+
+                def scb(idx, total, url):
+                    host = url.split("/")[2] if "//" in url else url
+                    self.msg_queue.put(("update_source", (idx, total, host)))
+
+                path = updater.download(info["asset_url"],
+                                        filename=info.get("asset_name") or None,
+                                        progress_cb=cb,
+                                        mirrors=mirrors,
+                                        expected_size=info.get("asset_size"),
+                                        source_cb=scb)
+                self.msg_queue.put(("update_file", path))
+            except Exception as e:
+                self.msg_queue.put(("update_error", str(e)))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_update_file(self, path):
+        self.downloading = False
+        self.log(f"更新包已下载：{path}")
+        self.status.set("更新包下载完成。")
+        if messagebox.askyesno("更新下载完成",
+                               f"新版本安装包已下载完成：\n{path}\n\n安装向导需要先退出本程序。\n"
+                               f"现在退出并启动安装向导吗？\n（选『否』可稍后手动双击该文件安装）"):
+            try:
+                subprocess.Popen([path])
+                self.after(400, self.destroy)
+            except Exception as e:
+                messagebox.showerror("更新", f"启动安装向导失败：{e}\n\n请手动双击安装包：\n{path}")
+
+    def _on_update_error(self, msg):
+        self.downloading = False
+        self.log(f"[警告] 更新包下载失败：{msg}")
+        self.status.set("更新包下载失败。")
+        if messagebox.askyesno("下载失败",
+                               f"更新包下载失败：\n{msg}\n\n是否打开 Releases 页面手动下载？"):
+            self._open_release_page()
 
     # ================= 全局热键（急停） =================
     def _setup_hotkey(self):

@@ -1,6 +1,6 @@
 ; 洗衣管家 · 照片批量上传助手 安装脚本
 #define MyAppName "洗衣管家 · 照片批量上传助手"
-#define MyAppVersion "1.7"
+#define MyAppVersion "1.8"
 #define MyAppPublisher "星期衣精致洗衣"
 #define MyAppExeName "洗衣管家上传助手.exe"
 
@@ -9,8 +9,10 @@ AppId={{9F3C7E52-1A4D-4B8E-8C61-D2A5F7B39E44}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={localappdata}\Programs\洗衣管家上传助手
+DefaultDirName=D:\洗衣管家上传助手
 DefaultGroupName=洗衣管家上传助手
+DisableDirPage=no
+UsePreviousAppDir=no
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=E:\软件开发\.openclaw\tmp\pkg\installer_out

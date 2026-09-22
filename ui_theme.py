@@ -142,6 +142,16 @@ def apply_theme(root):
               bordercolor=[("active", "#E6EBDF"), ("pressed", "#DDE4D5")],
               foreground=[("active", P["ink_2"])])
 
+    # ---- 按钮：浅绿底上的文字按钮（更新提示条用） ----
+    style.configure("SoftGhost.TButton",
+                    font=FONTS["small"], foreground=P["accent_ink"],
+                    background=P["accent_soft"], bordercolor=P["accent_soft"],
+                    lightcolor=P["accent_soft"], darkcolor=P["accent_soft"],
+                    focuscolor=P["accent_soft"], relief="flat", padding=(10, 4))
+    style.map("SoftGhost.TButton",
+              background=[("active", "#DCEECC"), ("pressed", "#D2E8BE")],
+              bordercolor=[("active", "#DCEECC"), ("pressed", "#D2E8BE")])
+
     # ---- 复选框 ----
     style.configure("Card.TCheckbutton",
                     font=FONTS["ui"], foreground=P["ink_2"],

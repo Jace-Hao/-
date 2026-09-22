@@ -89,7 +89,16 @@ def default_config():
             "warmup_nav": True,            # 坐标模式：批次开始前自动“更多→拍照”预热导航
             "dry_run": False,              # 演练模式：只移动鼠标不点击（界面上也有开关）
             "strict_dialog_check": True,   # 严格校验文件对话框（未出现/未关闭则判失败，避免假成功）
-            "skip_if_has_photos": True     # 精准模式：订单已有照片时跳过，防止重复上传（正式执行时）
+            "skip_if_has_photos": True,   # 精准模式：订单已有照片时跳过，防止重复上传（正式执行时）
+            "check_update_on_start": True  # 启动时自动检查 GitHub 新版本（界面底部也可手动【检查更新】）
+        },
+        "update": {
+            # 在线更新下载源：直连 GitHub 过慢时自动切换的镜像前缀（可增删；留空列表 = 只用直连）
+            "mirrors": [
+                "https://gh-proxy.com/",
+                "https://ghfast.top/",
+                "https://ghproxy.net/"
+            ]
         }
     }
 
