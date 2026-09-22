@@ -93,10 +93,14 @@ def default_config():
             "check_update_on_start": True  # 启动时自动检查 GitHub 新版本（界面底部也可手动【检查更新】）
         },
         "update": {
-            # 在线更新下载源：直连 GitHub 过慢时自动切换的镜像前缀（可增删；留空列表 = 只用直连）
+            # 在线更新下载源：直连 GitHub 过慢时自动切换的国内加速线路（可增删；留空列表 = 只用直连）
             "mirrors": [
                 "https://gh-proxy.com/",
                 "https://ghfast.top/",
+                "https://gh.ddlc.top/",
+                "https://gh.idayer.com/",
+                "https://gh.xxooo.cf/",
+                "https://gh.catmak.name/",
                 "https://ghproxy.net/"
             ]
         }

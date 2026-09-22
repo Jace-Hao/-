@@ -16,7 +16,7 @@ print("isl installed ->", os.path.exists(inno_lang))
 # 2) 写 .iss（UTF-8 BOM）
 iss = u"""; 洗衣管家 · 照片批量上传助手 安装脚本
 #define MyAppName "洗衣管家 · 照片批量上传助手"
-#define MyAppVersion "1.9"
+#define MyAppVersion "1.10"
 #define MyAppPublisher "星期衣精致洗衣"
 #define MyAppExeName "洗衣管家上传助手.exe"
 

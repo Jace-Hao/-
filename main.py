@@ -51,7 +51,7 @@ from ui_theme import PALETTE as C, FONTS, STATUS_COLORS, apply_theme
 import updater
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.9"
+VERSION = "1.10"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
@@ -98,6 +98,7 @@ class App(tk.Tk):
         self.update_thread = None
         self.update_bar = None
         self.update_label = None
+        self.update_accel = False
         self.downloading = False
         if self.cfg["options"].get("check_update_on_start", True):
             self.after(1500, self._auto_check_update)
@@ -322,15 +323,21 @@ class App(tk.Tk):
                     self._on_update_result(payload)
                 elif kind == "update_source":
                     i, n, host = payload
-                    tip = "（备用加速源）" if i > 1 else ""
-                    self.log(f"更新包下载源 {i}/{n}{tip}：{host}")
-                    self.status.set(f"更新包下载中（源 {i}/{n}）…")
+                    if i > 1:
+                        self.update_accel = True
+                        self.log(f"直连较慢，已自动切换国内加速线路：{host}（第 {i - 1}/{n - 1} 条）")
+                        self.status.set(f"国内加速下载中（{host}）…")
+                    else:
+                        self.update_accel = False
+                        self.log(f"开始从 GitHub 直连下载：{host}")
+                        self.status.set("更新包下载中（GitHub 直连）…")
                 elif kind == "update_progress":
                     latest = (self.update_info or {}).get("latest", "?")
+                    tag = "（国内加速）" if self.update_accel else ""
                     if payload is None:
-                        self.status.set(f"正在下载 v{latest} …")
+                        self.status.set(f"正在下载 v{latest}{tag} …")
                     else:
-                        self.status.set(f"正在下载 v{latest} … {payload}%")
+                        self.status.set(f"正在下载 v{latest}{tag} … {payload}%")
                 elif kind == "update_file":
                     self._on_update_file(payload)
                 elif kind == "update_error":
@@ -1021,6 +1028,7 @@ class App(tk.Tk):
             self.status.set("更新包正在下载中…")
             return
         self.downloading = True
+        self.update_accel = False
         self.status.set(f"正在下载 v{info.get('latest')} …")
         self.log(f"开始下载更新包：{info.get('asset_name')}")
         mirrors = (self.cfg.get("update") or {}).get("mirrors", updater.DEFAULT_MIRRORS)
@@ -1042,6 +1050,8 @@ class App(tk.Tk):
                                         progress_cb=cb,
                                         mirrors=mirrors,
                                         expected_size=info.get("asset_size"),
+                                        sha256_url=info.get("sha256_url"),
+                                        expected_sha256=info.get("sha256"),
                                         source_cb=scb)
                 self.msg_queue.put(("update_file", path))
             except Exception as e:
