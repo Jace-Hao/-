@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>洗衣管家 · 照片批量上传助手 — 开发交接文档</title>
+<title>洗衣管家 · 照片批量上传助手 — 开发交接文档 v1.10</title>
 <style>
 /* 洗衣管家 · 开发交接文档 — Native HTML editorial 样式（冷峻技术 / 单色印刷方向）
    方向：工程记录感 —— 纸底 + 单一深绿 accent + hairline + mono 元数据 */
@@ -142,98 +142,40 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <body>
 <div class="layout">
 <aside class="sidebar">
-  <div class="brand">
-    <div class="monogram">洗</div>
-    <div><div class="bname">洗衣管家 · 照片批量上传助手</div><div class="bsub">开发交接文档 · v1.6</div></div>
-  </div>
-  <div class="side-meta"><div>DOCUMENT · 2026-09-22</div><div>VERSION · v1.6</div></div>
+<div class="brand"><div class="monogram">洗</div><div><div class="bname">洗衣管家 · 照片批量上传助手</div><div class="bsub">开发交接文档 · v1.10</div></div></div>
+<div class="side-meta"><div>DOCUMENT · 2026-09-22</div><div>VERSION · v1.10</div></div>
 <nav class="toc">
-<div class="toc-sec">
-<a href="#0-一分钟读懂"><span class="toc-num">00</span><span class="toc-label">一分钟读懂</span></a>
-</div>
-<div class="toc-sec">
-<a href="#1-业务背景与目标"><span class="toc-num">01</span><span class="toc-label">业务背景与目标</span></a>
-<div class="toc-sub">
-<a href="#11-背景">1.1 背景</a>
-<a href="#12-输入-输出">1.2 输入 / 输出</a>
-<a href="#13-核心业务规则">1.3 核心业务规则</a>
-</div>
-</div>
-<div class="toc-sec">
-<a href="#2-系统架构"><span class="toc-num">02</span><span class="toc-label">系统架构</span></a>
-<div class="toc-sub">
-<a href="#21-组件一览">2.1 组件一览</a>
-<a href="#22-单条订单的完整流程cdp-精准模式">2.2 单条订单的完整流程（CDP 精准模式）</a>
-<a href="#23-可靠性设计多层兜底">2.3 可靠性设计（多层兜底）</a>
-</div>
-</div>
-<div class="toc-sec">
-<a href="#3-关键配置configjson"><span class="toc-num">03</span><span class="toc-label">关键配置（config.json）</span></a>
-</div>
-<div class="toc-sec">
-<a href="#4-技术要点与深坑重点"><span class="toc-num">04</span><span class="toc-label">技术要点与深坑（重点！）</span></a>
-<div class="toc-sub">
-<a href="#41-cdp-精准模式洗衣管家是-cefsharp-应用">4.1 CDP 精准模式（洗衣管家是 CefSharp 应用）</a>
-<a href="#42-系统选择图片对话框自动化核心难点">4.2 系统「选择图片」对话框自动化（核心难点）</a>
-<a href="#43-权限级别uipi全项目最深的坑">4.3 ⭐ 权限级别（UIPI）——全项目最深的坑</a>
-<a href="#44-调试模式自动保障每次运行前">4.4 调试模式自动保障（每次运行前）</a>
-<a href="#45-其它已踩的坑速查">4.5 其它已踩的坑（速查）</a>
-</div>
-</div>
-<div class="toc-sec">
-<a href="#5-构建与发布流程"><span class="toc-num">05</span><span class="toc-label">构建与发布流程</span></a>
-<div class="toc-sub">
-<a href="#51-打包链4-步">5.1 打包链（4 步）</a>
-<a href="#52-版本与发布约定">5.2 版本与发布约定</a>
-<a href="#53-安装策略">5.3 安装策略</a>
-</div>
-</div>
-<div class="toc-sec">
-<a href="#6-本机部署现状2026-09-22"><span class="toc-num">06</span><span class="toc-label">本机部署现状（2026-09-22）</span></a>
-</div>
-<div class="toc-sec">
-<a href="#7-版本历史修复脉络"><span class="toc-num">07</span><span class="toc-label">版本历史（修复脉络）</span></a>
-</div>
-<div class="toc-sec">
-<a href="#8-已知限制与后续建议"><span class="toc-num">08</span><span class="toc-label">已知限制与后续建议</span></a>
-</div>
-<div class="toc-sec">
-<a href="#9-故障排查速查表"><span class="toc-num">09</span><span class="toc-label">故障排查速查表</span></a>
-</div>
-<div class="toc-sec">
-<a href="#10-快速上手接手后的第一次运行"><span class="toc-num">10</span><span class="toc-label">快速上手（接手后的第一次运行）</span></a>
-</div>
-<div class="toc-sec">
-<a href="#11-沟通与需求历程摘要了解项目来龙去脉"><span class="toc-num">11</span><span class="toc-label">沟通与需求历程摘要（了解项目来龙去脉）</span></a>
-</div>
+<div class="toc-sec"><a href="#0"><span class="toc-num">01</span><span class="toc-label">0. 一分钟读懂</span></a></div>
+<div class="toc-sec"><a href="#1"><span class="toc-num">02</span><span class="toc-label">1. 业务背景与目标</span></a><div class="toc-sub"><a href="#11">1.1 背景</a><a href="#12">1.2 输入 / 输出</a><a href="#13">1.3 核心业务规则</a></div></div>
+<div class="toc-sec"><a href="#2"><span class="toc-num">03</span><span class="toc-label">2. 系统架构</span></a><div class="toc-sub"><a href="#21">2.1 组件一览</a><a href="#22-cdp">2.2 单条订单的完整流程（CDP 精准模式）</a><a href="#23">2.3 可靠性设计（多层兜底）</a></div></div>
+<div class="toc-sec"><a href="#3-configjson"><span class="toc-num">04</span><span class="toc-label">3. 关键配置（config.json）</span></a></div>
+<div class="toc-sec"><a href="#4"><span class="toc-num">05</span><span class="toc-label">4. 技术要点与深坑（重点！）</span></a><div class="toc-sub"><a href="#41-cdp-cefsharp">4.1 CDP 精准模式（洗衣管家是 CefSharp 应用）</a><a href="#42">4.2 系统「选择图片」对话框自动化（核心难点）</a><a href="#43-uipi">4.3 ⭐ 权限级别（UIPI）——全项目最深的坑</a><a href="#44">4.4 调试模式自动保障（每次运行前）</a><a href="#45">4.5 其它已踩的坑（速查）</a><a href="#46-v18-v110">4.6 在线更新与多源下载（v1.8 引入 / v1.10 升级）</a><a href="#47-v19">4.7 应用图标体系（v1.9 起）</a><a href="#48">4.8 工作区环境注意（本机特有）</a></div></div>
+<div class="toc-sec"><a href="#5"><span class="toc-num">06</span><span class="toc-label">5. 构建与发布流程</span></a><div class="toc-sub"><a href="#51-4">5.1 打包链（4 步，按序执行）</a><a href="#52">5.2 版本同步清单（每次升版必改）</a><a href="#53-github-release">5.3 发布（GitHub Release）</a><a href="#54">5.4 验证脚本（开发工具/验证脚本/）</a><a href="#55">5.5 安装策略</a></div></div>
+<div class="toc-sec"><a href="#6-2026-09-22"><span class="toc-num">07</span><span class="toc-label">6. 本机部署现状（2026-09-22 晚）</span></a></div>
+<div class="toc-sec"><a href="#7"><span class="toc-num">08</span><span class="toc-label">7. 版本历史（修复脉络）</span></a></div>
+<div class="toc-sec"><a href="#8"><span class="toc-num">09</span><span class="toc-label">8. 已知限制与后续建议</span></a></div>
+<div class="toc-sec"><a href="#9"><span class="toc-num">10</span><span class="toc-label">9. 故障排查速查表</span></a></div>
+<div class="toc-sec"><a href="#10"><span class="toc-num">11</span><span class="toc-label">10. 快速上手（接手后的第一次运行）</span></a></div>
+<div class="toc-sec"><a href="#11_1"><span class="toc-num">12</span><span class="toc-label">11. 交付物与文件地图</span></a></div>
+<div class="toc-sec"><a href="#12-2026-09-22"><span class="toc-num">13</span><span class="toc-label">12. 整理记录（2026-09-22）</span></a></div>
+<div class="toc-sec"><a href="#13_1"><span class="toc-num">14</span><span class="toc-label">13. 沟通与需求历程摘要（了解项目来龙去脉）</span></a></div>
 </nav>
 </aside>
 <main class="content">
-<header class="cover">
-<div class="kicker">开发交接文档 · PROJECT HANDOVER</div>
-<h1><span class="t1">洗衣管家 · 照片批量上传助手</span><span class="t2">开发交接文档</span></h1>
-<div class="doc-meta">
-<div class="mrow"><span class="mk">交接对象</span><span class="mv">全栈工程师</span></div>
-<div class="mrow"><span class="mk">文档日期</span><span class="mv">2026-09-22</span></div>
-<div class="mrow"><span class="mk">当前版本</span><span class="mv">v1.6</span></div>
-<div class="mrow"><span class="mk">源码位置</span><span class="mv"><code>E:\软件开发\洗衣管家上传助手</code>（Git 仓库）</span></div>
-<div class="mrow"><span class="mk">远程仓库</span><span class="mv"><a href="https://github.com/Jace-Hao/xiyi-photo-upload">https://github.com/Jace-Hao/xiyi-photo-upload</a></span></div>
-<div class="mrow"><span class="mk">成品形态</span><span class="mv">Windows 安装包（GitHub Releases 提供下载）；本机已安装 v1.6 并在门店实际使用</span></div>
-</div>
-</header>
-<hr />
-<h2 id="0-一分钟读懂">0. 一分钟读懂</h2>
+<div class="cover"><div class="kicker">INTERNAL · 开发交接文档</div><div class="t1">洗衣管家 · 照片批量上传助手</div><div class="t2">开发交接文档 · v1.10 · 2026-09-22</div><div class="doc-meta"><div class="mrow"><span class="mk">交接对象</span><span class="mv">全栈工程师</span></div><div class="mrow"><span class="mk">当前版本</span><span class="mv">v1.10（2026-09-22 发布）</span></div><div class="mrow"><span class="mk">仓库</span><span class="mv">github.com/Jace-Hao/xiyi-photo-upload</span></div></div></div>
+<h2 id="0">0. 一分钟读懂</h2>
 <ul>
-<li><strong>这是什么</strong>：Windows 桌面自动化工具。输入一份导出清单（CSV：衣物条码 + 照片文件夹路径），它自动操作门店管理软件「洗衣管家」，把每个订单对应的照片批量上传，并输出执行结果。</li>
-<li><strong>技术栈</strong>：Python 3.14 + Tkinter(GUI) + PyAutoGUI + Chrome DevTools Protocol（WebSocket）+ Win32 消息/窗口 API。</li>
+<li><strong>这是什么</strong>：Windows 桌面自动化工具。输入一份导出清单（CSV：衣物条码 + 照片文件夹路径），自动操作门店管理软件「洗衣管家」批量上传照片，并输出执行结果。v1.8 起内置在线更新。</li>
+<li><strong>技术栈</strong>：Python 3.14 + Tkinter(GUI) + PyAutoGUI + Chrome DevTools Protocol（WebSocket）+ Win32 消息/窗口 API；分发用 PyInstaller(onedir) + Inno Setup。</li>
 <li><strong>两种运行模式</strong>：
   1. <strong>CDP 精准模式（首选）</strong>：通过洗衣管家的 Chromium 调试端口（9222）做页面级控制；
   2. <strong>图像锚点/坐标模式（兜底）</strong>：截图模板匹配 + 坐标点击（调试端口不可用时自动切换）。</li>
-<li><strong>最重要的一条经验（务必先读 §4.3）</strong>：洗衣管家以<strong>管理员权限</strong>运行，本工具也必须以<strong>管理员权限</strong>运行（打包参数 <code>--uac-admin</code>）。权限不同级时，Windows 会<strong>静默拦截</strong>所有自动化操作——这是本项目踩过最深的坑。</li>
+<li><strong>最重要的一条经验（务必先读 §4.3）</strong>：洗衣管家以<strong>管理员权限</strong>运行，本工具也必须以<strong>管理员权限</strong>运行（打包参数 <code>--uac-admin</code>）。权限不同级时，Windows 会<strong>静默拦截</strong>所有自动化操作。</li>
+<li><strong>两条环境红线</strong>：① <code>D:\洗衣管家上传助手</code> 是门店在用的<strong>真实安装目录</strong>，任何脚本/流程<strong>不得</strong>把它当测试残留清理；② 工作区 <code>.openclaw\tmp</code> 是与其它任务共享的<strong>易失暂存区</strong>，会被定期清空，重要产物不要放那里。</li>
 </ul>
 <hr />
-<h2 id="1-业务背景与目标">1. 业务背景与目标</h2>
-<h3 id="11-背景">1.1 背景</h3>
+<h2 id="1">1. 业务背景与目标</h2>
+<h3 id="11">1.1 背景</h3>
 <ul>
 <li>目标软件「洗衣管家」（<code>xygjwinapp.exe</code>）：洗衣门店使用的 Windows 桌面管理系统，本体基于 <strong>CefSharp（Chromium 内核）</strong>，程序目录 <code>D:\Blending_Release-6.1.17\</code>。</li>
 <li>日常痛点：每收一件衣物需要为其上传照片。在软件「拍照页」的手工流程为：
@@ -241,21 +183,21 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
   一批订单几十件，重复劳动强度大。</li>
 <li>解决方案：按《导出清单》格式批量自动执行上述流程。</li>
 </ul>
-<h3 id="12-输入-输出">1.2 输入 / 输出</h3>
+<h3 id="12">1.2 输入 / 输出</h3>
 <ul>
 <li><strong>输入</strong>：导出清单 CSV（编码兼容 GBK / UTF-8，程序自动识别），列包含：
   <code>条码</code>、<code>照片数量</code>、<code>文件夹位置</code>（如 <code>E:\收衣照片\110000044440</code>）。</li>
-<li><strong>输出</strong>：<code>输出结果\</code> 目录下生成 <code>执行结果_时间戳.csv/.xlsx</code>（含每条状态）、<code>运行日志_时间戳.txt</code>、出错时现场截图（<code>出错截图\</code>）。</li>
+<li><strong>输出</strong>：工具目录下 <code>输出结果\</code>：<code>执行结果_时间戳.csv/.xlsx</code>（逐条状态）、<code>运行日志_时间戳.txt</code>、出错截图（<code>出错截图\</code>）。</li>
 </ul>
-<h3 id="13-核心业务规则">1.3 核心业务规则</h3>
+<h3 id="13">1.3 核心业务规则</h3>
 <ul>
 <li><strong>防重复上传</strong>：执行前检查订单在软件中已有的照片数；已有照片的订单默认<strong>跳过</strong>（<code>options.skip_if_has_photos=true</code>）。</li>
-<li><strong>部分完成处理</strong>：上传未达预期张数时，标记“疑似部分完成 N/M 张，请人工核对”，<strong>不盲目重传</strong>（避免重复）；分批逻辑可精确定位缺失批次，便于补传。</li>
+<li><strong>部分完成处理</strong>：上传未达预期张数时，标记“疑似部分完成 N/M 张，请人工核对”，<strong>不盲目重传</strong>；分批逻辑可精确定位缺失批次，便于补传。</li>
 <li><strong>按订单文件夹整批上传</strong>：一个订单一个照片文件夹。</li>
 </ul>
 <hr />
-<h2 id="2-系统架构">2. 系统架构</h2>
-<h3 id="21-组件一览">2.1 组件一览</h3>
+<h2 id="2">2. 系统架构</h2>
+<h3 id="21">2.1 组件一览</h3>
 <table>
 <thead>
 <tr>
@@ -267,18 +209,23 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <tbody>
 <tr>
 <td><code>main.py</code></td>
-<td>Tkinter 主界面：导入清单、执行控制、结果导出、<strong>运行前保障</strong>（调试模式、权限自检）</td>
-<td><code>ensure_debug_ready_for_run()</code>；<code>VERSION</code> 常量在此</td>
+<td>Tkinter 主界面：导入清单、执行控制、结果导出、<strong>在线更新</strong>、运行前保障</td>
+<td><code>VERSION</code> 常量在此；<code>_auto_check_update</code> / <code>_start_update_download</code></td>
 </tr>
 <tr>
 <td><code>automation.py</code></td>
-<td>自动化引擎 <code>AutomationEngine</code>：批量流程、CDP 模式单条流程、<strong>文件对话框操作</strong>、图像兜底模式</td>
+<td>自动化引擎 <code>AutomationEngine</code>：批量流程、CDP 单条流程、<strong>文件对话框操作</strong>、图像兜底模式</td>
 <td>核心复杂度集中在此</td>
 </tr>
 <tr>
 <td><code>cdp_control.py</code></td>
 <td>CDP 客户端 <code>CDPApp</code>：连接调试端口、执行 JS、页面识别、点击、照片计数</td>
 <td>与洗衣管家页面交互的唯一入口</td>
+</tr>
+<tr>
+<td><code>updater.py</code></td>
+<td><strong>在线更新</strong>：查询 GitHub Releases、多源下载（直连 → 国内加速线路，断点续传 + SHA256 校验）</td>
+<td><code>check_latest()</code> / <code>download()</code>；仅标准库；v1.10 升级</td>
 </tr>
 <tr>
 <td><code>csv_import.py</code></td>
@@ -301,9 +248,14 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <td><code>pick_best_window()</code></td>
 </tr>
 <tr>
+<td><code>ui_theme.py</code></td>
+<td>界面主题：色板 / 字体 / 按钮体系统一管理（v1.7 起）</td>
+<td>换肤只动这一个文件</td>
+</tr>
+<tr>
 <td><code>assets/</code></td>
-<td>Logo（窗口图标/界面）</td>
-<td><code>logo.ico</code> 打包用</td>
+<td>Logo 与图标（<code>logo.ico</code> 多尺寸 16–256px、<code>logo.png</code>、<code>logo_512.png</code>、顶栏徽标）</td>
+<td>v1.9 起为「上传」语义新图标</td>
 </tr>
 <tr>
 <td><code>anchors/</code></td>
@@ -312,8 +264,13 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 </tr>
 <tr>
 <td><code>构建工具/</code></td>
-<td>打包脚本 + 中文语言包 + 说明页模板（详见 §5）</td>
-<td>换机需调整路径变量</td>
+<td>打包链四脚本 + 中文语言包 + 说明页模板（详见 §5）</td>
+<td>换机需调整脚本顶部路径变量</td>
+</tr>
+<tr>
+<td><code>开发工具/验证脚本/</code></td>
+<td>更新下载 / 界面文案验证脚本（详见 §5.4）</td>
+<td>发版后可跑一遍</td>
 </tr>
 <tr>
 <td><code>CHANGELOG.md</code> / <code>程序说明.html</code></td>
@@ -322,7 +279,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 </tr>
 </tbody>
 </table>
-<h3 id="22-单条订单的完整流程cdp-精准模式">2.2 单条订单的完整流程（CDP 精准模式）</h3>
+<h3 id="22-cdp">2.2 单条订单的完整流程（CDP 精准模式）</h3>
 <pre><code>[1] 连接调试端口 9222：HTTP GET /json 找到页面 target → WebSocket 连接
 [2] 导航到拍照页（路由：#/clothManage/photograph?...）
 [3] DOM 级输入条码（native setter + input/change 事件）→ 点击「查询/确认」
@@ -337,7 +294,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
       d. 等对话框关闭 → 轮询页面照片数增加 → 达到预期张数才算成功
 [6] 记录结果 → 下一条
 </code></pre>
-<h3 id="23-可靠性设计多层兜底">2.3 可靠性设计（多层兜底）</h3>
+<h3 id="23">2.3 可靠性设计（多层兜底）</h3>
 <ol>
 <li><strong>对话框选择</strong>：消息通道（最稳）→ 键盘+剪贴板（带双重校验）→ 文件夹导航+全选（最后手段）；</li>
 <li><strong>打开对话框</strong>：CDP 受信任点击（重试 3 次）→ 真实鼠标点击（重试 2 次）；</li>
@@ -345,7 +302,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <li><strong>失败不假成功</strong>：以"页面照片数实际增加"为最终验收标准。</li>
 </ol>
 <hr />
-<h2 id="3-关键配置configjson">3. 关键配置（config.json）</h2>
+<h2 id="3-configjson">3. 关键配置（config.json）</h2>
 <table>
 <thead>
 <tr>
@@ -374,6 +331,16 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <td></td>
 <td><code>screenshot_on_error</code></td>
 <td>出错截图（默认 true）</td>
+</tr>
+<tr>
+<td></td>
+<td><code>check_update_on_start</code></td>
+<td>启动时自动检查更新（默认 true；可在界面底部手动【检查更新】）</td>
+</tr>
+<tr>
+<td><code>update</code></td>
+<td><code>mirrors</code></td>
+<td>更新下载国内加速线路列表（默认 7 条；可增删；留空 = 只用直连）</td>
 </tr>
 <tr>
 <td><code>cdp</code></td>
@@ -408,11 +375,11 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 </tbody>
 </table>
 <hr />
-<h2 id="4-技术要点与深坑重点">4. 技术要点与深坑（重点！）</h2>
+<h2 id="4">4. 技术要点与深坑（重点！）</h2>
 <blockquote>
 <p>记录"为什么这样做"与"哪些路走不通"，改代码前务必通读。</p>
 </blockquote>
-<h3 id="41-cdp-精准模式洗衣管家是-cefsharp-应用">4.1 CDP 精准模式（洗衣管家是 CefSharp 应用）</h3>
+<h3 id="41-cdp-cefsharp">4.1 CDP 精准模式（洗衣管家是 CefSharp 应用）</h3>
 <ul>
 <li><strong>启用方式</strong>：软件带参数启动 <code>--remote-debugging-port=9222</code>（本机桌面快捷方式已自带）。</li>
 <li><strong>连接</strong>：<code>http://127.0.0.1:9222/json</code> 取 target → WebSocket 地址 → <code>Runtime.evaluate</code> / <code>Input.*</code> / <code>DOM.*</code> 可用。</li>
@@ -428,7 +395,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
   3. <strong>对话框打开期间禁止一切 CDP 调用</strong>（会超时并可能损伤连接）。对话框阶段全部走 Win32 API + PyAutoGUI。
   4. <strong>"注入文件"路线已废弃</strong>：向 <code>.photo_content</code> 的隐藏 <code>input[type=file]</code> 注入文件（<code>DOM.setFileInputFiles</code>）<strong>不会触发组件上传</strong>（文件塞得进、界面无反应）。不要重走。</li>
 </ul>
-<h3 id="42-系统选择图片对话框自动化核心难点">4.2 系统「选择图片」对话框自动化（核心难点）</h3>
+<h3 id="42">4.2 系统「选择图片」对话框自动化（核心难点）</h3>
 <ul>
 <li>对话框特征：类名 <code>#32770</code>，标题「选择图片」；内容为 DirectUI 样式。</li>
 <li><strong>控件定位</strong>（<code>EnumChildWindows</code> 枚举后代）：</li>
@@ -445,7 +412,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <li><strong>⚠️ 文件名框有长度上限（实测 259 字符）</strong>：带引号的多文件全路径串过长会被截断，末尾文件变无效路径。<strong>必须分批</strong>：<code>_chunk_files_by_length()</code> 控制每批 <strong>≤240 字符</strong>（约 5 张/批），逐批重复整个对话框流程。（实测 13 张 → 分 3 批全部成功。）</li>
 <li><strong>最后手段</strong>：导航文件夹（粘贴文件夹路径→回车）→ 点列表空白 → Ctrl+A → 回车。</li>
 </ul>
-<h3 id="43-权限级别uipi全项目最深的坑">4.3 ⭐ 权限级别（UIPI）——全项目最深的坑</h3>
+<h3 id="43-uipi">4.3 ⭐ 权限级别（UIPI）——全项目最深的坑</h3>
 <ul>
 <li><strong>现象</strong>：对话框弹出后，"写内容/粘贴/回车"全部无效，界面一直停着。日志显示"校验成功"但框里仍是空的（假成功）。</li>
 <li><strong>根因</strong>：洗衣管家程序清单强制<strong>以管理员权限运行</strong>；旧版工具是<strong>普通权限</strong>。Windows 的 <strong>UIPI（User Interface Privilege Isolation）</strong> 会<strong>静默拦截</strong>低权限进程对高权限窗口的 <code>SendMessage</code>、键盘输入、剪贴板注入——不报错、直接丢弃。</li>
@@ -455,7 +422,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <li>换机器部署注意目标机 UAC 设置：标准 UAC 下会弹一次"是否允许"，属正常现象（目标软件本身也需管理员）。</li>
 <li><strong>教训</strong>：所有"粘贴不进去/消息无反应"类问题，<strong>先查权限级别</strong>，再查代码。</li>
 </ul>
-<h3 id="44-调试模式自动保障每次运行前">4.4 调试模式自动保障（每次运行前）</h3>
+<h3 id="44">4.4 调试模式自动保障（每次运行前）</h3>
 <ul>
 <li>执行前自动检查 9222 端口；不可用时按需处理：
   1. 软件未启动 → 自动 <code>Popen([exe, "--remote-debugging-port=9222"])</code> + 等端口就绪；
@@ -463,7 +430,7 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <li>实现要点：等待期间用事件泵刷新界面（防"卡死"观感）；<code>tasklist/taskkill</code> 子进程调用加 <code>CREATE_NO_WINDOW</code>（防黑窗）。</li>
 <li><code>启动洗衣管家-调试模式.bat</code> 可手动以调试模式拉起软件。</li>
 </ul>
-<h3 id="45-其它已踩的坑速查">4.5 其它已踩的坑（速查）</h3>
+<h3 id="45">4.5 其它已踩的坑（速查）</h3>
 <ul>
 <li><strong>窗口匹配</strong>：<code>pygetwindow.getWindowsWithTitle('洗衣管家')</code> 会把工具自身窗口也匹配进来（标题包含关系）；用 <code>winmatch.pick_best_window()</code> 打分选（完全相等 &gt; 开头 &gt; 包含；排除工具/浏览器后缀）。</li>
 <li><strong>GitHub Release 附件名只支持 ASCII</strong>：中文名会被服务端打碎成点号（实测）；安装包附件用英文名（<code>Xiyiguanjia-Uploader-Setup-vX.Y.exe</code>），中文显示名放附件 <code>label</code> 字段。</li>
@@ -473,12 +440,41 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <li><strong>照片计数时序</strong>：换订单后等"条码信息刷新 + 连续两次读数一致"再采纳（防读到上一单残留）。</li>
 <li><strong>升级安装</strong>：安装器替换 exe 前先关闭运行中的工具（文件占用）。</li>
 </ul>
+<h3 id="46-v18-v110">4.6 在线更新与多源下载（v1.8 引入 / v1.10 升级）</h3>
+<ul>
+<li><strong>流程</strong>：启动静默检查（<code>options.check_update_on_start</code> 可关）+ 底部【检查更新】手动 → <code>check_latest()</code> 对比版本 → 发现新版顶部提示条 →【下载并安装】→ <code>updater.download()</code>（线程 + 队列更新界面）→ 完成后确认退出 → <code>subprocess.Popen</code> 启动安装向导。</li>
+<li><strong>多源下载策略</strong>（源列表 = GitHub 直连 + <code>update.mirrors</code> 各国内加速线路，按顺序）：</li>
+<li>速度健康检查 <code>SPEED_CHECKS = ((6s, 64KB/s), (22s, 96KB/s), (55s, 64KB/s))</code>：低于阈值<strong>立即换下一个源</strong>（约 6 秒就能发现慢源）；</li>
+<li><strong>换源断点续传</strong>：<code>Range: bytes=N-</code> 接力下载，不重头再来；服务器不支持续传时自动降级为重新下载；</li>
+<li>全部线路都慢时，第二轮放宽限制兜底再试（<code>_RELAXED_CHECKS = ((90s, 12KB/s))</code>）；</li>
+<li><strong>完整性校验</strong>：Release 附带 <code>.sha256</code> 附件（或说明文本含 64 位校验值）时，下载完成自动校验，不通过则换源重试。</li>
+<li><strong>界面</strong>：状态栏显示「GitHub 直连 / 国内加速（含线路名）+ 进度%」；日志记录每次换源。</li>
+<li><strong>实测（2026-09-22）</strong>：真机直连变慢 → 约 6 秒自动切换 gh-proxy 加速 → 从 256KB 断点接续 → 56MB 共约 50 秒完成，SHA256 与本地一致；新增线路（ddlc / idayer / xxooo / catmak）实测 600–1000 KB/s。</li>
+</ul>
+<h3 id="47-v19">4.7 应用图标体系（v1.9 起）</h3>
+<ul>
+<li><strong>设计</strong>：品牌绿圆角方砖 + 白色「上传托盘 + 向上箭头」图形；替掉旧的纯文字字标（小尺寸糊成一片）。</li>
+<li><strong>多尺寸专门优化</strong>：16/20px 极简（粗箭头+底线）、24/32px 简化（粗箭头+浅弧托盘）、40px 以上标准版。<code>logo.ico</code> 含 9 档（16/20/24/32/40/48/64/128/256），帧格式沿用原始 PNG 压缩帧。</li>
+<li><strong>源文件</strong>：设计工作区 <code>E:\软件开发\图标改版\</code>（含旧图标备份 <code>_旧图标备份/</code>、方案对比图、嵌入核验图）；项目成品在 <code>assets/</code>。</li>
+<li><strong>坑：Windows 图标缓存很顽固</strong>。更新图标后如快捷方式/桌面仍显示旧图，标准修复流程：
+  1. <code>taskkill /f /im explorer.exe</code>，<strong>确认进程已退出</strong>（循环确认，防自动重启抢占）；
+  2. 删除 <code>%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache*.db</code>（逐一确认删除成功）；
+  3. 启动资源管理器 + <code>ie4uinit.exe -show</code> 刷新；必要时重建快捷方式 .lnk 文件。</li>
+<li>快速路径：重建/更新快捷方式文件本身也能解决大部分情况。</li>
+</ul>
+<h3 id="48">4.8 工作区环境注意（本机特有）</h3>
+<ul>
+<li><strong><code>D:\洗衣管家上传助手</code> = 门店在用的真实安装目录</strong>（v1.10）。<strong>任何脚本/流程不得把它当测试残留清理</strong>（2026-09-22 曾两次误删并重装；判断前先查注册表 <code>HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall</code> 的 <code>InstallLocation</code> 与快捷方式指向）。</li>
+<li><strong><code>.openclaw\tmp</code> 是共享且易失的暂存区</strong>：可能被并行任务/清理器清空；重要构建产物、截图、交付物一律放专用目录（<code>安装包/</code>、<code>交付记录/</code> 等），用完即复制。</li>
+<li><strong>C 盘旧版残留</strong>：<code>C:\Users\haoyuwei\AppData\Local\Programs\洗衣管家上传助手</code>（约 197MB，v1.7 时代残留；无注册表关联、主程序已不在；内含 9/20–9/22 的历史输出与日志）。<strong>暂未清理</strong>——如需清理，先把其中 <code>输出结果\</code> 备份出来再删。</li>
+<li><strong>火绒</strong>：见 §4.5；对安装包/脚本的自动处置偶有影响，如遇文件"消失"先查安全软件。</li>
+</ul>
 <hr />
-<h2 id="5-构建与发布流程">5. 构建与发布流程</h2>
+<h2 id="5">5. 构建与发布流程</h2>
 <blockquote>
-<p>打包脚本已归档在 <code>构建工具/</code>（含 <code>README.md</code>、<code>ChineseSimplified.isl</code>、<code>manual_template.html</code>）。<strong>换机器或移动项目目录后，先按 <code>构建工具/README.md</code> 修改脚本顶部的路径变量</strong>（脚本内保留开发机绝对路径）。</p>
+<p>打包脚本在 <code>构建工具/</code>（含 <code>README.md</code>、<code>ChineseSimplified.isl</code>、<code>manual_template.html</code>）。<strong>换机器或移动项目目录后，先按 <code>构建工具/README.md</code> 修改脚本顶部的路径变量。</strong></p>
 </blockquote>
-<h3 id="51-打包链4-步">5.1 打包链（4 步）</h3>
+<h3 id="51-4">5.1 打包链（4 步，按序执行）</h3>
 <table>
 <thead>
 <tr>
@@ -490,40 +486,59 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <tbody>
 <tr>
 <td>1</td>
-<td><code>build_app.py</code>（PyInstaller：<code>--windowed --uac-admin</code> + hidden imports）</td>
-<td><code>pkg/dist/洗衣管家上传助手/</code>（onedir）</td>
+<td><code>build_manual.py</code></td>
+<td><code>程序说明.html</code>（模板 + 截图注入；先跑，供打包使用）</td>
 </tr>
 <tr>
 <td>2</td>
-<td><code>assemble_payload.py</code></td>
-<td>dist 内补入 assets/anchors/config/文档/bat</td>
+<td><code>build_app.py</code>（PyInstaller：<code>--windowed --uac-admin --icon assets\logo.ico</code> + hidden imports）</td>
+<td><code>pkg/dist/洗衣管家上传助手/</code>（onedir）</td>
 </tr>
 <tr>
 <td>3</td>
-<td><code>build_installer.py</code>（Inno Setup + 中文语言包）</td>
-<td><code>洗衣管家上传助手_安装包_v{版本}.exe</code></td>
+<td><code>assemble_payload.py</code></td>
+<td>dist 内补入 assets/anchors/config/README/说明/bat → <code>pkg/payload</code></td>
 </tr>
 <tr>
 <td>4</td>
-<td>（可选）<code>build_manual.py</code></td>
-<td><code>程序说明.html</code>（模板 + 截图 base64 内嵌）</td>
+<td><code>build_installer.py</code>（Inno Setup + 中文语言包）</td>
+<td><code>洗衣管家上传助手_安装包_v{版本}.exe</code></td>
 </tr>
 </tbody>
 </table>
-<h3 id="52-版本与发布约定">5.2 版本与发布约定</h3>
+<blockquote>
+<p>⚠️ 中间产物位于 <code>.openclaw\tmp\pkg</code>（易被环境清理）；<strong>构建成功后立即把安装包复制到 <code>安装包/</code> 留档</strong>。</p>
+</blockquote>
+<h3 id="52">5.2 版本同步清单（每次升版必改）</h3>
+<ol>
+<li><code>main.py</code> → <code>VERSION = "x.y"</code>；</li>
+<li><code>CHANGELOG.md</code>（新增版本节）、<code>README.md</code>（安装包名、FAQ、页脚）；</li>
+<li><code>构建工具/manual_template.html</code>（5 处版本引用：手册标题/日期行/版本徽章/安装包名/页脚）；</li>
+<li><code>构建工具/build_installer.py</code> 与 <code>installer.iss</code> → <code>#define MyAppVersion "x.y"</code>；</li>
+<li>刷新 <code>文档素材/主界面截图.png</code>（开发版实跑截图，含新版本号）。</li>
+</ol>
+<h3 id="53-github-release">5.3 发布（GitHub Release）</h3>
 <ul>
-<li>版本号：<code>main.py</code> 的 <code>VERSION</code>；同步更新 <code>CHANGELOG.md</code>、<code>README.md</code>、<code>程序说明.html</code>；</li>
-<li>Git 提交并推送 <code>origin main</code>；</li>
-<li>GitHub Release：正文=版本更新日志；附件=安装包（ASCII 名 + 中文 label）；v1.2 起每版均有 Release；</li>
-<li><code>.gitignore</code>：<code>输出结果/</code>、<code>运行日志_*.txt</code>、<code>__pycache__/</code>、<code>.openclaw/</code>（运行时产物与门店数据<strong>不入库</strong>）。</li>
+<li>构建产物复制到 <code>安装包/</code> 留档（该目录<strong>不入库</strong>，与 GitHub Releases 互为备份）；</li>
+<li>生成 ASCII 名副本（<code>Xiyiguanjia-Uploader-Setup-vX.Y.exe</code>）作为 Release 附件；</li>
+<li><strong>同时上传 <code>.sha256</code> 校验附件</strong>（内容：<code>&lt;sha256&gt;  &lt;文件名&gt;</code>）——供后续版本的在线更新自动校验；</li>
+<li>发布后核验：用上一版客户端跑 <code>check_latest('旧版本')</code>，应能发现新版并带 <code>sha256_url</code>。</li>
 </ul>
-<h3 id="53-安装策略">5.3 安装策略</h3>
+<h3 id="54">5.4 验证脚本（<code>开发工具/验证脚本/</code>）</h3>
 <ul>
-<li>装到 <code>%LOCALAPPDATA%\Programs\洗衣管家上传助手</code>（当前用户，<strong>安装免管理员</strong>）；自动创建桌面/开始菜单快捷方式；<code>unins000.exe</code> 卸载；</li>
-<li>⚠️ 程序本体启动需要管理员（<code>--uac-admin</code>，为匹配洗衣管家权限，见 §4.3）。</li>
+<li><code>test_updater_download.py</code>：多源下载联网测试（慢源自动切换 / 断点续传 / 哈希一致），详注见脚本头；</li>
+<li><code>test_update_ui.py</code>：界面文案渲染测试（模拟「切换国内加速」并在状态栏与日志显示）。</li>
+<li>建议每次改更新模块或发版后各跑一遍（运行方式见该目录 <code>README.md</code>）。</li>
+</ul>
+<h3 id="55">5.5 安装策略</h3>
+<ul>
+<li>v1.8 起安装向导<strong>支持自选安装位置</strong>：「选择目标位置」页显示，默认 <code>D:\洗衣管家上传助手</code>（不再默认 C 盘）；<code>UsePreviousAppDir=no</code>（升级时不回落旧目录）。</li>
+<li>安装需权限为最低级（<code>PrivilegesRequired=lowest</code>，安装免管理员）；<strong>程序本体启动需管理员</strong>（§4.3）。</li>
+<li>升级到不同目录时，旧目录文件不会自动删除（如需清理旧目录请手工处理）。</li>
+<li>卸载：系统「设置 → 应用」或安装目录 <code>unins000.exe</code>。</li>
 </ul>
 <hr />
-<h2 id="6-本机部署现状2026-09-22">6. 本机部署现状（2026-09-22）</h2>
+<h2 id="6-2026-09-22">6. 本机部署现状（2026-09-22 晚）</h2>
 <table>
 <thead>
 <tr>
@@ -542,24 +557,32 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 </tr>
 <tr>
 <td>已安装版本</td>
-<td>v1.6（<code>%LOCALAPPDATA%\Programs\洗衣管家上传助手</code>；桌面快捷方式「洗衣管家上传助手」）</td>
+<td><strong>v1.10</strong> @ <code>D:\洗衣管家上传助手</code>；快捷方式：桌面（<code>E:\桌面</code>）+ 开始菜单</td>
 </tr>
 <tr>
-<td>测试清单/照片</td>
-<td><code>E:\桌面\新建文件夹\</code>（<code>导出清单_*.csv</code> + 24 个条码文件夹）</td>
+<td>更新通道</td>
+<td>GitHub Releases（软件内【检查更新】/ 启动自动检查）</td>
 </tr>
 <tr>
-<td>输出结果</td>
-<td>工具目录下 <code>输出结果\</code>（运行日志 / 执行结果 / 出错截图）</td>
+<td>旧版残留</td>
+<td><code>C:\Users\haoyuwei\AppData\Local\Programs\洗衣管家上传助手</code>（v1.7 残留，未清，见 §4.8）</td>
 </tr>
 <tr>
 <td>Python 环境</td>
-<td>Python 3.14（<code>py -3.14</code>）；依赖见 <code>requirements.txt</code></td>
+<td>Python 3.14（<code>py -3.14</code>，3.14.7）；依赖见 <code>requirements.txt</code></td>
+</tr>
+<tr>
+<td>测试清单/照片</td>
+<td>出厂清单与照片目录按需导出（照片总仓如 <code>E:\收衣照片</code>）</td>
+</tr>
+<tr>
+<td>输出结果</td>
+<td>运行目录下 <code>输出结果\</code>（运行日志 / 执行结果 / 出错截图）</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="7-版本历史修复脉络">7. 版本历史（修复脉络）</h2>
+<h2 id="7">7. 版本历史（修复脉络）</h2>
 <table>
 <thead>
 <tr>
@@ -604,23 +627,44 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <td>09-21</td>
 <td><strong>权限根因修复（UIPI）</strong>：工具以管理员启动；修复"校验假成功"；CDP 超时自动重连</td>
 </tr>
+<tr>
+<td>v1.7</td>
+<td>09-22</td>
+<td>界面视觉改版：品牌绿卡片体系 + <code>ui_theme.py</code> 统一主题</td>
+</tr>
+<tr>
+<td>v1.8</td>
+<td>09-22</td>
+<td><strong>在线更新</strong>（检查/下载/安装引导，含多源下载雏形）+ <strong>安装位置可选</strong>（默认 D 盘）</td>
+</tr>
+<tr>
+<td>v1.9</td>
+<td>09-22</td>
+<td><strong>全新应用图标</strong>（上传语义、多尺寸优化；安装器/快捷方式/窗口图标全换）</td>
+</tr>
+<tr>
+<td>v1.10</td>
+<td>09-22</td>
+<td><strong>更新下载升级</strong>：秒级自动切国内加速、换源断点续传、SHA256 校验、线路扩至 7 条</td>
+</tr>
 </tbody>
 </table>
 <blockquote>
-<p>完整细节见 <code>CHANGELOG.md</code>。实测成绩：整批 24 单 / 125 张照片全部上传成功（含 13 张的大单自动分 3 批）。</p>
+<p>各版本安装包在 GitHub Releases：<a href="https://github.com/Jace-Hao/xiyi-photo-upload/releases">https://github.com/Jace-Hao/xiyi-photo-upload/releases</a>；完整细节见 <code>CHANGELOG.md</code>。</p>
 </blockquote>
 <hr />
-<h2 id="8-已知限制与后续建议">8. 已知限制与后续建议</h2>
+<h2 id="8">8. 已知限制与后续建议</h2>
 <ol>
-<li><strong>依赖洗衣管家版本</strong>：若软件大版本升级，页面路由/元素选择器可能变化——优先更新 <code>cdp_control.py</code> 中的路由与选择器；图像模式的页面指纹（<code>anchors/</code>）也需重新截取。</li>
+<li><strong>依赖洗衣管家版本</strong>：若软件大版本升级，页面路由/元素选择器可能变化——优先更新 <code>cdp_control.py</code> 中路由与选择器；图像模式的页面指纹（<code>anchors/</code>）也需重新截取。</li>
 <li><strong>管理员权限为硬要求</strong>（双方都要）；换机部署注意 UAC 提示。</li>
 <li>图像兜底模式需先做坐标校准（CDP 模式无需）；分辨率/缩放变化会影响图像模式。</li>
 <li><strong>单机单实例</strong>假设；未实现多店并发/排队。</li>
 <li><strong>数据质量</strong>：条码错误时软件提示"衣物详情不存在"，工具标记失败属正常（清单数据需与系统一致）。</li>
-<li>建议增强（按需）：结果推送到企业微信/飞书；定时任务；把 Releases 作为唯一分发渠道（仓库内不再放 exe，避免膨胀）。</li>
+<li>更新下载若遇少数极端网络（所有线路都慢），会自动兜底但可能较久；实在不行到 Releases 页手动下载。</li>
+<li>建议增强（按需）：结果推送企业微信/飞书；定时任务；旧版残留（C 盘）清理流程固化。</li>
 </ol>
 <hr />
-<h2 id="9-故障排查速查表">9. 故障排查速查表</h2>
+<h2 id="9">9. 故障排查速查表</h2>
 <table>
 <thead>
 <tr>
@@ -657,19 +701,55 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 <td>日志中文乱码</td>
 <td>以 UTF-8 编码打开 <code>运行日志_*.txt</code></td>
 </tr>
+<tr>
+<td>更新下载很慢/像卡住</td>
+<td>正常流程会自动切国内加速（约 6 秒判定），可在日志看换源记录；全部失败时可手动到 Releases 下载</td>
+</tr>
+<tr>
+<td>图标显示旧样式</td>
+<td>图标缓存未刷新，见 §4.7 标准流程</td>
+</tr>
 </tbody>
 </table>
 <hr />
-<h2 id="10-快速上手接手后的第一次运行">10. 快速上手（接手后的第一次运行）</h2>
+<h2 id="10">10. 快速上手（接手后的第一次运行）</h2>
 <ol>
 <li>打开「洗衣管家」（桌面快捷方式；或开工具后由工具自动拉起）；</li>
 <li>以管理员身份打开「洗衣管家上传助手」（双击即可；本机 UAC 静默、无弹窗）；</li>
-<li>点【导入清单文件…】选择 CSV（如 <code>E:\桌面\新建文件夹\导出清单_*.csv</code>）；</li>
+<li>点【导入清单文件…】选择 CSV（列：条码 / 照片数量 / 文件夹位置）；</li>
 <li>先点【测试第一条】观察全流程（或勾选【演练模式】只预检不上传）；</li>
 <li>确认无误 →【▶ 开始执行】；结果到 <code>输出结果\</code> 查看。</li>
+<li>更新：软件启动会自动检查；有新版本时按顶部提示条【下载并安装】即可。</li>
 </ol>
 <hr />
-<h2 id="11-沟通与需求历程摘要了解项目来龙去脉">11. 沟通与需求历程摘要（了解项目来龙去脉）</h2>
+<h2 id="11_1">11. 交付物与文件地图</h2>
+<ul>
+<li><strong>源码仓库</strong>：<code>E:\软件开发\洗衣管家上传助手</code>（Git；remote = GitHub <code>Jace-Hao/xiyi-photo-upload</code>）</li>
+<li><strong>安装包</strong>：项目 <code>安装包/</code>（v1.9、v1.10 可见；更早版本在 <code>安装包/历史版本/</code>）；GitHub Releases 为权威分发。</li>
+<li><strong>工作区相关目录</strong>（<code>E:\软件开发\</code>）：</li>
+<li><code>图标改版/</code> —— v1.9 图标设计过程稿、旧图标备份、核验图；</li>
+<li><code>UI改版/</code> —— v1.7 界面改版预览与素材（含改版前 main.py 备份）；</li>
+<li><code>交付记录/</code> —— 交付物（如 v1.10 更新下载实测图）；</li>
+<li><code>.cluster/</code> —— 历史任务工作台（内部产物；不含当前项目关键文件）；</li>
+<li><code>memory/</code> —— 工作日志（每日记录）。</li>
+<li><strong>注意</strong>：<code>.openclaw\tmp</code> 为共享易失目录，不放长期文件（§4.8）。</li>
+</ul>
+<hr />
+<h2 id="12-2026-09-22">12. 整理记录（2026-09-22）</h2>
+<p><strong>第二轮整理（本晚，第二版交接文档同期）</strong>——清理原则：只动可再生物与自产测试残留；删除动作全部<strong>移入回收站</strong>（可恢复），他人/在用文件一律不碰。</p>
+<ul>
+<li>已清理（约 95MB，均入回收站）：</li>
+<li><code>.cluster\wash-label\docx_build\node_modules</code>（约 35MB，可再生；保留 <code>package.json</code> 即一条命令可装回）；</li>
+<li><code>.openclaw\tmp</code> 中本项目产物：v1.10 安装包副本（58MB，与 <code>安装包/</code>、GitHub 重复）、校验文件、下载测试目录与脚本、金丝雀文件（<strong>同目录下另一任务的 <code>xqy-ui</code> 文件夹保持不动</strong>）；</li>
+<li>项目 <code>__pycache__/</code>、0 字节控制台日志 <code>运行日志_启动控制台.txt</code>；</li>
+<li><code>交付记录/</code> 中间过程文件（截图源图、运行输出、旧测试脚本副本——脚本已归档至仓库 <code>开发工具/验证脚本/</code>）。</li>
+<li>归档移动：<code>安装包/</code> 内 v1.6–v1.8 安装包移入 <code>安装包/历史版本/</code> 子目录。</li>
+<li>保留未动（说明）：<code>洗衣管家会员导出/</code>（进行中）、<code>星期衣精致洗衣衣物照片系统/</code>（运行数据，约 2GB）、<code>水洗唛打印助手/</code>（另一项目）、<code>.openclaw-attachments/</code>（系统管理）、项目内 <code>输出结果/</code>（开发期测试记录）、C 盘旧版残留（含历史数据，待用户决定，§4.8）。</li>
+<li>第一轮整理（同日早些时候）：开发文件夹迁移到 E 盘并全量核验（36 个受管文件 0 缺失）。</li>
+</ul>
+<p><strong>经验固化</strong>：<code>D:\洗衣管家上传助手</code> 清理红线（§4.8）、<code>.openclaw\tmp</code> 易失性（§4.8）已写入本文档与工作区备忘，后续任何脚本不得再犯。</p>
+<hr />
+<h2 id="13_1">13. 沟通与需求历程摘要（了解项目来龙去脉）</h2>
 <table>
 <thead>
 <tr>
@@ -726,13 +806,28 @@ a{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(46,93
 </tr>
 <tr>
 <td>09-22</td>
-<td>开发文件夹迁移到 E 盘，检查完整性</td>
-<td>全量核验无缺失（git 36 个受管文件 0 缺失）；本文档交接</td>
+<td>要求在线更新（从 GitHub 检查并安装新版）+ 安装包可选择位置、默认不装 C 盘</td>
+<td>v1.8（多源下载雏形 + 默认 D 盘 + 选择位置页）</td>
+</tr>
+<tr>
+<td>09-22</td>
+<td>要求按「上传助手」语义设计新图标</td>
+<td>v1.9（多尺寸专门优化；含图标缓存刷新流程）</td>
+</tr>
+<tr>
+<td>09-22</td>
+<td>要求「GitHub 不稳时自动走国内加速下载」</td>
+<td>v1.10（秒级切换 + 断点续传 + SHA256 校验 + 7 条线路；真机实测通过）</td>
+</tr>
+<tr>
+<td>09-22</td>
+<td>要求整理文件夹、清理无用文件、出交接文档</td>
+<td>本文档（v1.10 全量重写）+ 第二轮整理完成</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<p><em>文档维护：随版本更新；技术细节以代码与 <code>CHANGELOG.md</code> 为准。</em></p>
+<p><em>文档维护：随版本更新；技术细节以代码与 <code>CHANGELOG.md</code> 为准。本版由第二轮整理同步重写（v1.6 → v1.10）。</em></p>
 </main>
 </div>
 </body>
