@@ -1,6 +1,6 @@
-﻿; 洗衣管家 · 照片批量上传助手 安装脚本
+; 洗衣管家 · 照片批量上传助手 安装脚本
 #define MyAppName "洗衣管家 · 照片批量上传助手"
-#define MyAppVersion "1.6"
+#define MyAppVersion "1.7"
 #define MyAppPublisher "星期衣精致洗衣"
 #define MyAppExeName "洗衣管家上传助手.exe"
 
@@ -13,9 +13,9 @@ DefaultDirName={localappdata}\Programs\洗衣管家上传助手
 DefaultGroupName=洗衣管家上传助手
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputDir=C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp\pkg\installer_out
+OutputDir=E:\软件开发\.openclaw\tmp\pkg\installer_out
 OutputBaseFilename=洗衣管家上传助手_安装包_v{#MyAppVersion}
-SetupIconFile=C:\Users\haoyuwei\.openclaw-autoclaw\workspace\洗衣管家上传助手\assets\logo.ico
+SetupIconFile=E:\软件开发\洗衣管家上传助手\assets\logo.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2
 SolidCompression=yes
@@ -30,7 +30,7 @@ Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式："; Flags: checkedonce
 
 [Files]
-Source: "C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp\pkg\dist\洗衣管家上传助手\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "E:\软件开发\.openclaw\tmp\pkg\dist\洗衣管家上传助手\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{autodesktop}\洗衣管家上传助手"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\assets\logo.ico"; Tasks: desktopicon

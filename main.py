@@ -46,9 +46,10 @@ from tkinter.scrolledtext import ScrolledText
 
 from config_io import load_config, save_config
 from csv_import import import_list, TaskRecord
+from ui_theme import PALETTE as C, FONTS, STATUS_COLORS, apply_theme
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.6"
+VERSION = "1.7"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
@@ -61,18 +62,18 @@ def _run_hidden(cmd, timeout=15):
     except Exception:
         return None
 
-COLOR_OK = "#1a7f37"
-COLOR_FAIL = "#c62828"
-COLOR_SKIP = "#8a8a8a"
-COLOR_RUN = "#1565c0"
+COLOR_OK = STATUS_COLORS["成功"]
+COLOR_FAIL = STATUS_COLORS["失败"]
+COLOR_SKIP = STATUS_COLORS["跳过"]
+COLOR_RUN = STATUS_COLORS["进行中"]
 
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(f"{APP_TITLE}  v{VERSION}")
-        self.geometry("980x720")
-        self.minsize(880, 640)
+        self.geometry("1000x760")
+        self.minsize(920, 700)
 
         self.cfg = load_config(BASE_DIR)
         self.tasks = []
@@ -94,18 +95,9 @@ class App(tk.Tk):
 
     # ================= UI =================
     def _setup_style(self):
-        style = ttk.Style(self)
-        try:
-            style.theme_use("vista")
-        except Exception:
-            pass
-        default_font = ("Microsoft YaHei UI", 10)
-        self.option_add("*Font", default_font)
-        style.configure(".", font=default_font)
-        style.configure("Title.TLabel", font=("Microsoft YaHei UI", 15, "bold"))
-        style.configure("Sub.TLabel", foreground="#666")
-        style.configure("Section.TLabelframe.Label", font=("Microsoft YaHei UI", 10, "bold"))
-        style.configure("Run.TButton", font=("Microsoft YaHei UI", 11, "bold"))
+        apply_theme(self)
+        self.option_add("*Font", FONTS["ui"])
+        self.configure(bg=C["bg"])
 
     def _setup_brand(self):
         """加载品牌 logo（窗口图标 + 顶栏图案）。"""
@@ -122,51 +114,110 @@ class App(tk.Tk):
         try:
             head_p = os.path.join(asset_dir, "logo_header.png")
             if os.path.exists(head_p):
-                self._img_header = tk.PhotoImage(file=head_p)
+                img = tk.PhotoImage(file=head_p)
+                if img.width() >= 72:   # 原图 96×96，缩为 48×48 更精致
+                    img = img.subsample(2, 2)
+                self._img_header = img
         except Exception:
             self._img_header = None
 
+    def _new_card(self, parent, step, title, hint=None, expand=False):
+        """构建统一卡片容器：编号徽标 + 标题（含右侧提示）+ 分隔线 + 内容区。"""
+        card = tk.Frame(parent, bg=C["surface"], highlightthickness=1,
+                        highlightbackground=C["line"], highlightcolor=C["line"])
+        head = tk.Frame(card, bg=C["surface"])
+        head.pack(fill="x", padx=14, pady=(7, 0))
+        tk.Label(head, text=str(step), bg=C["accent_soft"], fg=C["accent_ink"],
+                 font=FONTS["badge"], padx=7, pady=1).pack(side="left")
+        tk.Label(head, text=title, bg=C["surface"], fg=C["ink"],
+                 font=FONTS["card"]).pack(side="left", padx=(8, 0))
+        if hint:
+            tk.Label(head, text=hint, bg=C["surface"], fg=C["muted"],
+                     font=FONTS["small"]).pack(side="right")
+        tk.Frame(card, bg=C["line_soft"], height=1).pack(fill="x", padx=14, pady=(6, 0))
+        body = tk.Frame(card, bg=C["surface"])
+        if expand:
+            body.pack(fill="both", expand=True, padx=14, pady=7)
+        else:
+            body.pack(fill="x", padx=14, pady=7)
+        return card, body
+
     def _build_ui(self):
-        pad = {"padx": 10, "pady": 6}
-
-        # ---- 顶部标题 ----
-        header = ttk.Frame(self)
-        header.pack(fill="x", **pad)
+        # ---------- 顶栏：品牌 / 版本 / 模式 ----------
+        header = tk.Frame(self, bg=C["surface"], highlightthickness=1,
+                          highlightbackground=C["line"], highlightcolor=C["line"])
+        header.pack(fill="x", padx=12, pady=(10, 0))
+        hrow = tk.Frame(header, bg=C["surface"])
+        hrow.pack(fill="x", padx=16, pady=6)
         if self._img_header is not None:
-            ttk.Label(header, image=self._img_header).pack(side="left", padx=(0, 8))
-        ttk.Label(header, text=APP_TITLE, style="Title.TLabel").pack(side="left")
-        ttk.Label(header, text="  按操作流程图自动执行：输条码 → 上传图片 → 全选文件夹文件 → 循环",
-                  style="Sub.TLabel").pack(side="left")
+            tk.Label(hrow, image=self._img_header, bg=C["surface"]).pack(side="left", padx=(0, 12))
+        tw = tk.Frame(hrow, bg=C["surface"])
+        tw.pack(side="left")
+        tk.Label(tw, text=APP_TITLE, bg=C["surface"], fg=C["ink"],
+                 font=FONTS["title"]).pack(anchor="w")
+        chips = tk.Frame(hrow, bg=C["surface"])
+        chips.pack(side="right")
+        self.mode_chip = tk.Label(chips, text="精准模式", bg=C["accent_soft"], fg=C["accent_ink"],
+                                  font=FONTS["chip"], padx=10, pady=2)
+        self.mode_chip.pack(side="right")
+        tk.Label(chips, text=f"v{VERSION}", bg=C["chip_bg"], fg=C["chip_fg"],
+                 font=FONTS["chip"], padx=10, pady=2).pack(side="right", padx=(0, 8))
 
-        # ---- 步骤条 ----
-        steps = ttk.Frame(self)
-        steps.pack(fill="x", padx=10)
-        self.lbl_steps = ttk.Label(steps, foreground="#1565c0")
-        self.lbl_steps.pack(anchor="w")
+        # ---------- 步骤提示条 ----------
+        self.lbl_steps = tk.Label(self, anchor="w", bg=C["accent_soft"], fg=C["accent_ink"],
+                                  font=FONTS["ui"], padx=14, pady=5)
+        self.lbl_steps.pack(fill="x", padx=12, pady=(5, 0))
 
-        # ---- 导入区 ----
-        box1 = ttk.LabelFrame(self, text=" 1. 导入清单（导出清单 CSV） ", style="Section.TLabelframe")
-        box1.pack(fill="x", **pad)
-        row = ttk.Frame(box1)
-        row.pack(fill="x", padx=8, pady=6)
-        ttk.Button(row, text="导入清单文件…", command=self.on_import).pack(side="left")
-        self.lbl_import = ttk.Label(row, text="尚未导入清单", foreground="#666")
+        # ---------- 底部：状态栏 / 工具行（先占位，保证小窗口下不被裁掉） ----------
+        bar = tk.Frame(self, bg=C["bg"])
+        bar.pack(fill="x", side="bottom", padx=12, pady=(3, 6))
+        self.dot = tk.Label(bar, text="●", bg=C["bg"], fg=COLOR_OK, font=FONTS["small"])
+        self.dot.pack(side="left")
+        self.status = tk.StringVar(value="就绪。导入清单后，点「开始执行」即可。")
+        tk.Label(bar, textvariable=self.status, bg=C["bg"], fg=C["ink_2"],
+                 font=FONTS["small"], anchor="w").pack(side="left", padx=(6, 0))
+        tk.Label(bar, text="急停：鼠标甩到屏幕左上角 / F12", bg=C["bg"], fg=C["muted"],
+                 font=FONTS["small"]).pack(side="right")
+
+        bottom = tk.Frame(self, bg=C["bg"])
+        bottom.pack(fill="x", side="bottom", padx=12, pady=(5, 0))
+        calib_holder = tk.Frame(bottom, bg=C["bg"])
+        calib_holder.pack(side="left")
+        self.btn_calib = ttk.Button(calib_holder, text="坐标校准…", style="Ghost.TButton",
+                                    command=self.on_calibrate)
+        self.btn_calib.pack(side="left")
+        self.lbl_calib_off = tk.Label(calib_holder, text="坐标校准已停用（当前为精准模式）",
+                                      bg=C["bg"], fg=C["muted"], font=FONTS["small"])
+        ttk.Button(bottom, text="打开配置文件", style="Ghost.TButton",
+                   command=self.on_open_config).pack(side="left", padx=(10, 0))
+        ttk.Button(bottom, text="打开输出文件夹", style="Ghost.TButton",
+                   command=lambda: self._open_path(self.result_dir)).pack(side="left", padx=(4, 0))
+        ttk.Button(bottom, text="导出执行结果", style="Secondary.TButton",
+                   command=self.on_export).pack(side="right")
+
+        # ---------- 卡片 1：导入清单 ----------
+        card1, body1 = self._new_card(self, 1, "导入清单", "支持 GBK / UTF-8 的 CSV · 需含条码与文件夹位置")
+        card1.pack(fill="x", padx=12, pady=(6, 0))
+        ttk.Button(body1, text="导入清单文件…", style="Accent.TButton",
+                   command=self.on_import).pack(side="left")
+        self.lbl_import = tk.Label(body1, text="尚未导入清单", bg=C["surface"], fg=C["muted"],
+                                   font=FONTS["ui"])
         self.lbl_import.pack(side="left", padx=12)
 
-        # ---- 任务列表 ----
-        box2 = ttk.LabelFrame(self, text=" 2. 识别结果 / 执行状态 ", style="Section.TLabelframe")
-        box2.pack(fill="both", expand=True, **pad)
-        wrap = ttk.Frame(box2)
-        wrap.pack(fill="both", expand=True, padx=8, pady=6)
-
+        # ---------- 卡片 2：识别结果 / 执行状态 ----------
+        card2, body2 = self._new_card(self, 2, "识别结果 / 执行状态",
+                                      "双击某行可打开对应照片文件夹", expand=True)
+        card2.pack(fill="both", expand=True, padx=12, pady=(6, 0))
+        treewrap = tk.Frame(body2, bg=C["surface"])
+        treewrap.pack(fill="both", expand=True)
         cols = ("idx", "barcode", "folder", "files", "status", "note")
-        self.tree = ttk.Treeview(wrap, columns=cols, show="headings", height=9)
-        headers = {"idx": ("#", 50), "barcode": ("条码", 150), "folder": ("文件夹位置", 320),
-                   "files": ("文件数", 60), "status": ("状态", 80), "note": ("说明", 260)}
+        self.tree = ttk.Treeview(treewrap, columns=cols, show="headings", height=4)
+        headers = {"idx": ("#", 46), "barcode": ("条码", 140), "folder": ("文件夹位置", 300),
+                   "files": ("文件数", 56), "status": ("状态", 76), "note": ("说明", 242)}
         for c, (t, w) in headers.items():
             self.tree.heading(c, text=t)
             self.tree.column(c, width=w, anchor="center" if c in ("idx", "files", "status") else "w")
-        vs = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
+        vs = ttk.Scrollbar(treewrap, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=vs.set)
         self.tree.pack(side="left", fill="both", expand=True)
         vs.pack(side="right", fill="y")
@@ -174,57 +225,64 @@ class App(tk.Tk):
         self.tree.tag_configure("fail", foreground=COLOR_FAIL)
         self.tree.tag_configure("skip", foreground=COLOR_SKIP)
         self.tree.tag_configure("running", foreground=COLOR_RUN)
+        self.tree.tag_configure("stripe", background=C["stripe"])
         self.tree.bind("<Double-1>", self.on_row_dblclick)
         self.tree.bind("<Button-3>", self.on_row_dblclick)
+        # 空态提示（导入清单后隐藏）
+        self.empty_hint = tk.Label(body2,
+                                   text="尚未导入清单\n先在「1 导入清单」卡片导入 CSV，这里会逐条显示状态",
+                                   bg=C["surface"], fg=C["muted"], font=FONTS["ui"], justify="center")
+        self.empty_hint.place(relx=0.5, rely=0.60, anchor="center")
 
-        # ---- 执行控制 ----
-        box3 = ttk.LabelFrame(self, text=" 3. 执行控制 ", style="Section.TLabelframe")
-        box3.pack(fill="x", **pad)
-        ctl = ttk.Frame(box3)
-        ctl.pack(fill="x", padx=8, pady=6)
-
-        self.btn_run = ttk.Button(ctl, text="▶ 开始执行", style="Run.TButton", command=self.on_run)
+        # ---------- 卡片 3：执行控制 ----------
+        card3, body3 = self._new_card(self, 3, "执行控制", "建议先「测试第一条」验证后再整批执行")
+        card3.pack(fill="x", padx=12, pady=(6, 0))
+        crow = tk.Frame(body3, bg=C["surface"])
+        crow.pack(fill="x")
+        self.btn_run = ttk.Button(crow, text="▶ 开始执行", style="Primary.TButton", command=self.on_run)
         self.btn_run.pack(side="left")
-        self.btn_test = ttk.Button(ctl, text="测试第一条", command=self.on_test_one)
-        self.btn_test.pack(side="left", padx=6)
-        self.btn_pause = ttk.Button(ctl, text="暂停", command=self.on_pause, state="disabled")
-        self.btn_pause.pack(side="left", padx=6)
-        self.btn_stop = ttk.Button(ctl, text="停止", command=self.on_stop, state="disabled")
-        self.btn_stop.pack(side="left", padx=6)
-
-        self.var_stop_on_error = tk.BooleanVar(value=bool(self.cfg["options"].get("stop_on_error")))
-        ttk.Checkbutton(ctl, text="出错即暂停（方便人工处理）",
-                        variable=self.var_stop_on_error).pack(side="left", padx=16)
-
-        self.var_dry_run = tk.BooleanVar(value=bool(self.cfg["options"].get("dry_run", False)))
-        ttk.Checkbutton(ctl, text="演练模式（只移动鼠标不点击）",
-                        variable=self.var_dry_run).pack(side="left", padx=4)
-
-        self.progress = ttk.Progressbar(ctl, mode="determinate", length=220)
+        self.btn_test = ttk.Button(crow, text="测试第一条", style="Secondary.TButton",
+                                   command=self.on_test_one)
+        self.btn_test.pack(side="left", padx=(8, 0))
+        self.btn_pause = ttk.Button(crow, text="暂停", style="Secondary.TButton",
+                                    command=self.on_pause, state="disabled")
+        self.btn_pause.pack(side="left", padx=(8, 0))
+        self.btn_stop = ttk.Button(crow, text="停止", style="Danger.TButton",
+                                   command=self.on_stop, state="disabled")
+        self.btn_stop.pack(side="left", padx=(8, 0))
+        self.progress = ttk.Progressbar(crow, mode="determinate", length=200,
+                                        style="Brand.Horizontal.TProgressbar")
         self.progress.pack(side="right")
+        tk.Label(crow, text="进度", bg=C["surface"], fg=C["muted"],
+                 font=FONTS["small"]).pack(side="right", padx=(0, 8))
 
-        # ---- 日志 ----
-        box4 = ttk.LabelFrame(self, text=" 4. 运行日志 ", style="Section.TLabelframe")
-        box4.pack(fill="both", expand=True, **pad)
-        self.logtxt = ScrolledText(box4, height=9, font=("Consolas", 9))
-        self.logtxt.pack(fill="both", expand=True, padx=8, pady=6)
-        self.logtxt.configure(state="disabled")
+        orow = tk.Frame(body3, bg=C["surface"])
+        orow.pack(fill="x", pady=(7, 0))
+        self.var_stop_on_error = tk.BooleanVar(value=bool(self.cfg["options"].get("stop_on_error")))
+        ttk.Checkbutton(orow, text="出错即暂停（方便人工处理）", variable=self.var_stop_on_error,
+                        style="Card.TCheckbutton").pack(side="left")
+        self.var_dry_run = tk.BooleanVar(value=bool(self.cfg["options"].get("dry_run", False)))
+        ttk.Checkbutton(orow, text="演练模式（只移动鼠标不点击）", variable=self.var_dry_run,
+                        style="Card.TCheckbutton").pack(side="left", padx=(18, 0))
 
-        # ---- 底部按钮 ----
-        bottom = ttk.Frame(self)
-        bottom.pack(fill="x", padx=10, pady=(0, 4))
-        self.btn_calib = ttk.Button(bottom, text="坐标校准…", command=self.on_calibrate)
-        self.btn_calib.pack(side="left")
-        self.lbl_calib_off = ttk.Label(bottom, text="坐标校准已停用（当前为精准模式）", foreground="#888")
-        ttk.Button(bottom, text="打开配置文件", command=self.on_open_config).pack(side="left", padx=6)
-        ttk.Button(bottom, text="打开输出文件夹", command=lambda: self._open_path(self.result_dir)).pack(side="left", padx=6)
-        ttk.Button(bottom, text="导出执行结果", command=self.on_export).pack(side="right")
+        # ---------- 卡片 4：运行日志 ----------
+        card4, body4 = self._new_card(self, 4, "运行日志", expand=True)
+        card4.pack(fill="both", expand=True, padx=12, pady=(6, 0))
+        self.logtxt = ScrolledText(body4, height=3, font=FONTS["log"], relief="flat",
+                                   background=C["log_bg"], foreground="#2C332A",
+                                   insertbackground="#2C332A", borderwidth=0,
+                                   highlightthickness=1, highlightbackground=C["line_soft"],
+                                   padx=10, pady=4, state="disabled")
+        self.logtxt.pack(fill="both", expand=True)
+        try:
+            self.logtxt.vbar.configure(bg="#DCE3D4", activebackground="#C8D2BF",
+                                       troughcolor="#F1F4EC", relief="flat", bd=0, width=10)
+        except Exception:
+            pass
+        self.logtxt.tag_configure("err", foreground="#B3261E")
+        self.logtxt.tag_configure("warn", foreground="#8A6A1A")
+
         self._apply_mode_ui()
-
-        # ---- 状态栏 ----
-        self.status = tk.StringVar(value="就绪。提示：急停 = 鼠标猛甩到屏幕左上角（或按 F12）")
-        bar = ttk.Label(self, textvariable=self.status, anchor="w", foreground="#555")
-        bar.pack(fill="x", padx=10, pady=(0, 6))
 
     # ================= 日志 / 队列 =================
     def log(self, text):
@@ -253,8 +311,17 @@ class App(tk.Tk):
         self.after(120, self._drain_queue)
 
     def _append_log(self, line):
+        if "[错误]" in line or "异常" in line or "失败" in line:
+            tag = "err"
+        elif "警告" in line:
+            tag = "warn"
+        else:
+            tag = ""
         self.logtxt.configure(state="normal")
-        self.logtxt.insert("end", line + "\n")
+        if tag:
+            self.logtxt.insert("end", line + "\n", tag)
+        else:
+            self.logtxt.insert("end", line + "\n")
         self.logtxt.see("end")
         self.logtxt.configure(state="disabled")
         if self.run_log_file:
@@ -268,9 +335,12 @@ class App(tk.Tk):
         iid = str(task.index)
         if self.tree.exists(iid):
             tag = {"成功": "ok", "失败": "fail", "跳过": "skip", "进行中": "running"}.get(task.status, "")
+            tags = ("stripe",) if task.index % 2 == 0 else ()
+            if tag:
+                tags = tags + (tag,)
             self.tree.item(iid, values=(task.index, task.barcode, task.folder,
                                         task.display_files, task.status, task.note),
-                           tags=(tag,) if tag else ())
+                           tags=tags)
 
     # ================= 模式化 UI（精准/兼容） =================
     def _apply_mode_ui(self):
@@ -279,14 +349,16 @@ class App(tk.Tk):
         try:
             if cdp_on:
                 self.btn_calib.pack_forget()
-                self.lbl_calib_off.pack(side="left")
+                self.lbl_calib_off.pack(side="left", padx=(6, 0))
                 self.lbl_steps.configure(
-                    text="① 导入清单      →      ② 开始执行      →      ③ 查看 / 导出结果（精准模式）")
+                    text="① 导入清单    →    ② 开始执行    →    ③ 查看 / 导出结果（当前：精准模式）")
+                self.mode_chip.configure(text="精准模式", bg=C["accent_soft"], fg=C["accent_ink"])
             else:
                 self.lbl_calib_off.pack_forget()
                 self.btn_calib.pack(side="left")
                 self.lbl_steps.configure(
-                    text="① 导入清单      →      ② 坐标校准      →      ③ 开始执行      →      ④ 导出结果")
+                    text="① 导入清单    →    ② 坐标校准    →    ③ 开始执行    →    ④ 导出结果（当前：兼容模式）")
+                self.mode_chip.configure(text="兼容模式", bg="#F4EFE0", fg=C["warn"])
         except Exception:
             pass
 
@@ -551,7 +623,7 @@ class App(tk.Tk):
         self.report = report
         self._fill_tree()
         self.lbl_import.configure(
-            text=f"已导入：{os.path.basename(path)}")
+            text=f"已导入：{os.path.basename(path)}", fg=C["accent_ink"])
         self.status.set(report.summary())
         self.log(f"已导入清单：{path}")
         self.log(f"  识别编码：{report.encoding}；数据行：{report.total_rows}；条码有效：{report.valid_rows}")
@@ -568,9 +640,17 @@ class App(tk.Tk):
             self.tree.delete(i)
         for t in self.tasks:
             tag = {"成功": "ok", "失败": "fail", "跳过": "skip"}.get(t.status, "")
+            tags = ("stripe",) if t.index % 2 == 0 else ()
+            if tag:
+                tags = tags + (tag,)
             self.tree.insert("", "end", iid=str(t.index),
                              values=(t.index, t.barcode, t.folder, t.display_files,
-                                     t.status, t.note), tags=(tag,) if tag else ())
+                                     t.status, t.note), tags=tags)
+        if getattr(self, "empty_hint", None) is not None:
+            if self.tasks:
+                self.empty_hint.place_forget()
+            else:
+                self.empty_hint.place(relx=0.5, rely=0.60, anchor="center")
 
     # ================= 校准 =================
     def on_calibrate(self):
@@ -700,6 +780,10 @@ class App(tk.Tk):
         self.btn_test.configure(state=state)
         self.btn_pause.configure(state="normal" if running else "disabled", text="暂停")
         self.btn_stop.configure(state="normal" if running else "disabled")
+        try:
+            self.dot.configure(fg=COLOR_RUN if running else COLOR_OK)
+        except Exception:
+            pass
 
     def on_pause(self):
         if not self.control:

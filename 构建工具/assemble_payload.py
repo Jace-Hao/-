@@ -2,8 +2,8 @@
 """组装打包 payload：exe + _internal + assets + anchors + config + 文档。"""
 import os, shutil
 
-proj = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\洗衣管家上传助手"
-pkg = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp\pkg"
+proj = r"E:\软件开发\洗衣管家上传助手"
+pkg = r"E:\软件开发\.openclaw\tmp\pkg"
 dist = os.path.join(pkg, "dist", "洗衣管家上传助手")
 
 print("dist exists:", os.path.exists(dist))

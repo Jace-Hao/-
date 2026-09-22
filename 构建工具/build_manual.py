@@ -2,10 +2,9 @@
 """注入 base64 图片，生成最终 程序说明.html"""
 import base64, io, os
 
-tmp = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp"
-proj = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\洗衣管家上传助手"
+proj = r"E:\软件开发\洗衣管家上传助手"
 
-tpl = io.open(os.path.join(tmp, "manual_template.html"), encoding="utf-8").read()
+tpl = io.open(os.path.join(proj, "构建工具", "manual_template.html"), encoding="utf-8").read()
 
 def b64(path):
     data = open(path, "rb").read()

@@ -2,20 +2,21 @@
 """生成 .iss 安装脚本并编译（Inno Setup）。"""
 import io, os, shutil, subprocess
 
-proj = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\洗衣管家上传助手"
-pkg = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp\pkg"
-tmp = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp"
+proj = r"E:\软件开发\洗衣管家上传助手"
+bt = os.path.join(proj, "构建工具")
+tmp = r"E:\软件开发\.openclaw\tmp"
+pkg = os.path.join(tmp, "pkg")
 inno_lang = r"C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
 iscc = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 # 1) 安装中文语言包
-shutil.copy2(os.path.join(tmp, "ChineseSimplified.isl"), inno_lang)
+shutil.copy2(os.path.join(bt, "ChineseSimplified.isl"), inno_lang)
 print("isl installed ->", os.path.exists(inno_lang))
 
 # 2) 写 .iss（UTF-8 BOM）
 iss = u"""; 洗衣管家 · 照片批量上传助手 安装脚本
 #define MyAppName "洗衣管家 · 照片批量上传助手"
-#define MyAppVersion "1.6"
+#define MyAppVersion "1.7"
 #define MyAppPublisher "星期衣精致洗衣"
 #define MyAppExeName "洗衣管家上传助手.exe"
 

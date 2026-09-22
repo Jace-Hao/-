@@ -2,8 +2,8 @@
 """PyInstaller 打包构建脚本。"""
 import subprocess, sys, os
 
-proj = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\洗衣管家上传助手"
-pkg = r"C:\Users\haoyuwei\.openclaw-autoclaw\workspace\.openclaw\tmp\pkg"
+proj = r"E:\软件开发\洗衣管家上传助手"
+pkg = r"E:\软件开发\.openclaw\tmp\pkg"
 os.makedirs(pkg, exist_ok=True)
 
 cmd = [sys.executable, "-m", "PyInstaller",
