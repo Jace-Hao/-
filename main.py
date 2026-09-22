@@ -51,7 +51,7 @@ from ui_theme import PALETTE as C, FONTS, STATUS_COLORS, apply_theme
 import updater
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.8"
+VERSION = "1.9"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
