@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洗衣管家 · 照片批量上传助手 — 程序说明</title>
+<style>
+  :root{
+    --paper:#fafaf8;
+    --ink:#1a1a18;
+    --ink-2:#4c4a45;
+    --ink-3:#7a776f;
+    --rule:#d8d6cf;
+    --rule-soft:#e8e6e0;
+    --accent:#2e5d4b;
+    --accent-weak:#edf2ee;
+    --mono:"Cascadia Mono",Consolas,"Courier New",monospace;
+    --sans:"Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+    --nav-width:clamp(200px,18vw,250px);
+    --canvas:clamp(960px,93vw,1200px);
+    --measure:68ch;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- 布局：左侧目录 + 主内容 ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:var(--nav-width) minmax(0,1fr);
+    min-height:100vh;
+    max-width:1440px;
+    margin-inline:auto;
+  }
+  .sidebar{
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+    border-right:1px solid var(--rule-soft);
+    padding:28px 22px 24px;
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    padding-bottom:16px;border-bottom:1px solid var(--rule);
+    margin-bottom:18px;
+  }
+  .monogram{
+    width:30px;height:30px;border:1px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:600;color:var(--accent);
+  }
+  .brand .t1{font-size:13px;font-weight:600;letter-spacing:.02em;}
+  .brand .t2{font-size:11px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.06em;}
+  .toc-label{
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    letter-spacing:.14em;margin:6px 0 10px;
+  }
+  nav ul{list-style:none;}
+  nav li{margin:2px 0;}
+  nav a{
+    display:flex;gap:10px;align-items:baseline;
+    padding:4px 6px 4px 0;
+    color:var(--ink-2);text-decoration:none;font-size:13px;line-height:1.45;
+  }
+  nav a .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);min-width:20px;}
+  nav a:hover{color:var(--accent);}
+  .sidebar .foot{
+    margin-top:22px;padding-top:14px;border-top:1px solid var(--rule-soft);
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);line-height:1.8;
+    overflow-wrap:anywhere;
+  }
+
+  main{padding:56px 56px 72px;min-width:0;}
+
+  /* ---------- 封面 ---------- */
+  .cover{padding-bottom:38px;border-bottom:1px solid var(--rule);margin-bottom:40px;}
+  .kicker{
+    font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    color:var(--accent);margin-bottom:18px;
+  }
+  h1{
+    font-size:34px;font-weight:600;line-height:1.25;letter-spacing:-0.01em;
+    margin-bottom:12px;
+  }
+  .subtitle{font-size:16px;color:var(--ink-2);margin-bottom:28px;word-break:keep-all;}
+  .meta-row{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+    border-top:1px solid var(--rule);
+  }
+  .meta-item{padding:12px 14px 2px 0;min-width:0;}
+  .meta-item .k{
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    color:var(--ink-3);margin-bottom:4px;
+  }
+  .meta-item .v{font-size:13.5px;color:var(--ink);line-height:1.5;overflow-wrap:anywhere;}
+  .lede{
+    max-width:var(--measure);
+    margin-top:30px;font-size:16.5px;line-height:1.7;color:var(--ink);
+  }
+  .lede strong{font-weight:600;}
+
+  /* ---------- 章节 ---------- */
+  section{margin-bottom:56px;}
+  .sec-head{
+    display:flex;align-items:baseline;gap:14px;
+    border-bottom:1px solid var(--rule);
+    padding-bottom:10px;margin-bottom:26px;
+    max-width:var(--measure);
+  }
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--ink-3);letter-spacing:.06em;}
+  h2{font-size:22px;font-weight:600;letter-spacing:0;}
+  h3{font-size:16px;font-weight:600;margin:26px 0 10px;}
+  .prose{max-width:var(--measure);}
+  .prose p{margin-bottom:14px;color:var(--ink-2);}
+  .prose p strong, .prose li strong{color:var(--ink);font-weight:600;}
+  .prose ul,.prose ol{margin:0 0 14px 1.4em;}
+  .prose li{margin-bottom:6px;color:var(--ink-2);}
+  .prose code, .inline-code{
+    font-family:var(--mono);font-size:13px;
+    background:#f0efea;border:1px solid #dcdad2;border-radius:3px;
+    padding:1px 5px;color:#33322e;
+  }
+  .note{
+    border:1px solid var(--rule);padding:14px 18px;margin:20px 0;
+    max-width:var(--measure);background:#fcfcfa;
+  }
+  .note .lab{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--accent);margin-bottom:6px;
+  }
+  .note p{font-size:14px;color:var(--ink-2);margin:0;}
+  .note p + p{margin-top:6px;}
+
+  /* ---------- 表格 ---------- */
+  figure{margin:26px 0;}
+  .tbl-wrap{overflow-x:auto;}
+  table.tbl{width:100%;border-collapse:collapse;font-size:14px;}
+  table.tbl th{
+    text-align:left;font-size:11.5px;letter-spacing:.08em;color:var(--ink-3);
+    font-weight:600;border-bottom:1px solid var(--rule);padding:8px 12px 8px 0;
+    white-space:nowrap;
+  }
+  table.tbl td{
+    border-bottom:1px solid var(--rule-soft);
+    padding:10px 12px 10px 0;vertical-align:top;color:var(--ink-2);line-height:1.6;
+  }
+  table.tbl td.k{font-family:var(--mono);font-size:12.5px;color:var(--ink);white-space:nowrap;}
+  table.tbl td:last-child,table.tbl th:last-child{padding-right:0;}
+  figcaption{
+    font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+    margin-top:10px;letter-spacing:.04em;
+  }
+
+  /* ---------- 流程图 ---------- */
+  .flow-fig{max-width:min(100%,calc(var(--canvas) - 112px));}
+  .flow{
+    display:flex;flex-wrap:wrap;align-items:stretch;gap:0;
+    border:1px solid var(--rule);padding:22px 22px 18px;background:#fcfcfa;
+  }
+  .fstep{
+    border:1px solid var(--rule);background:var(--paper);
+    padding:10px 13px;font-size:13.5px;line-height:1.5;color:var(--ink);
+    display:flex;flex-direction:column;justify-content:center;gap:2px;
+    min-width:128px;
+  }
+  .fstep .fs-num{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em;}
+  .fstep .fs-txt{font-weight:600;font-size:13.5px;}
+  .fstep .fs-sub{font-size:11.5px;color:var(--ink-3);}
+  .farrow{
+    display:flex;align-items:center;justify-content:center;
+    padding:0 8px;color:var(--ink-3);font-size:15px;
+  }
+  .fbranch{
+    border:1px dashed var(--rule);padding:10px 13px;font-size:12.5px;color:var(--ink-2);
+    display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:150px;
+    background:#f7f7f4;
+  }
+  .fbranch .fb-t{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em;}
+  .floop{
+    margin-top:14px;padding-top:12px;border-top:1px dashed var(--rule);
+    font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:baseline;
+  }
+  .floop .lb{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em;}
+
+  /* ---------- 截图 ---------- */
+  .shot{border:1px solid var(--rule);}
+  .shot img{display:block;width:100%;height:auto;}
+  .shot-main{max-width:900px;}
+  .shot-cal{max-width:760px;}
+
+  /* ---------- FAQ ---------- */
+  dl.faq{max-width:var(--measure);}
+  dl.faq dt{
+    font-weight:600;color:var(--ink);margin-top:18px;font-size:14.5px;
+    display:flex;gap:10px;align-items:baseline;
+  }
+  dl.faq dt .q{font-family:var(--mono);font-size:12px;color:var(--accent);}
+  dl.faq dd{margin:6px 0 0 30px;color:var(--ink-2);font-size:14px;}
+
+  /* ---------- 步骤列表 ---------- */
+  .steps{max-width:var(--measure);}
+  .steps .st{
+    display:grid;grid-template-columns:34px 1fr;gap:14px;
+    padding:16px 0;border-bottom:1px solid var(--rule-soft);
+  }
+  .steps .st:last-child{border-bottom:0;}
+  .steps .st .sn{
+    font-family:var(--mono);font-size:13px;color:var(--ink-3);
+    padding-top:2px;letter-spacing:.04em;
+  }
+  .steps .st h3{margin:0 0 6px;}
+  .steps .st p{color:var(--ink-2);font-size:14px;margin-bottom:6px;}
+  .steps .st ul{margin:0 0 4px 1.3em;}
+  .steps .st li{color:var(--ink-2);font-size:14px;margin-bottom:4px;}
+
+  /* ---------- colophon ---------- */
+  .colophon{
+    border-top:1px solid var(--rule);padding-top:18px;
+    font-size:12.5px;color:var(--ink-3);line-height:1.9;
+    max-width:var(--measure);
+  }
+  .colophon .mono{font-family:var(--mono);}
+
+  @media (max-width:980px){
+    .layout{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    main{padding:32px 20px 56px;}
+    .meta-row{grid-template-columns:repeat(2,1fr);}
+    h1{font-size:26px;}
+  }
+  @media (max-width:600px){
+    .meta-row{grid-template-columns:1fr;}
+    .meta-item{padding:10px 0 2px;border-bottom:1px solid var(--rule-soft);}
+    .meta-item:last-child{border-bottom:0;}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ================= 侧栏目录 ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="monogram">洗</div>
+      <div>
+        <div class="t1">照片批量上传助手</div>
+        <div class="t2">PROGRAM MANUAL v1.0</div>
+      </div>
+    </div>
+    <div class="toc-label">目录</div>
+    <nav>
+      <ul>
+        <li><a href="#s1"><span class="n">01</span><span>概览：它做什么</span></a></li>
+        <li><a href="#s2"><span class="n">02</span><span>流程图还原</span></a></li>
+        <li><a href="#s3"><span class="n">03</span><span>使用四步</span></a></li>
+        <li><a href="#s4"><span class="n">04</span><span>界面导览</span></a></li>
+        <li><a href="#s5"><span class="n">05</span><span>坐标校准要点</span></a></li>
+        <li><a href="#s6"><span class="n">06</span><span>执行结果与导出</span></a></li>
+        <li><a href="#s7"><span class="n">07</span><span>配置与调参</span></a></li>
+        <li><a href="#s8"><span class="n">08</span><span>常见问题</span></a></li>
+        <li><a href="#s9"><span class="n">09</span><span>安全须知</span></a></li>
+      </ul>
+    </nav>
+    <div class="foot">
+      v1.6 · 2026-09-21<br>
+      依据《绘图1》流程图<br>与《导出清单》格式编写
+    </div>
+  </aside>
+
+  <!-- ================= 主内容 ================= -->
+  <main>
+
+    <!-- 封面 -->
+    <header class="cover">
+      <div class="kicker">操作自动化 · 交付说明</div>
+      <h1>洗衣管家 · 照片批量上传助手</h1>
+      <div class="subtitle">导入清单 → 自动识别 → 自动操作洗衣管家上传照片 → 输出执行结果</div>
+      <div class="meta-row">
+        <div class="meta-item"><div class="k">版本</div><div class="v">v1.6</div></div>
+        <div class="meta-item"><div class="k">运行环境</div><div class="v">Windows 10/11 · Python 3.10+</div></div>
+        <div class="meta-item"><div class="k">依据资料</div><div class="v">绘图1 操作流程图 · 导出清单 CSV</div></div>
+        <div class="meta-item"><div class="k">日期</div><div class="v">2026-09-21</div></div>
+      </div>
+      <p class="lede">
+        值班人员原先需要一遍遍重复：<strong>在洗衣管家里点条码框、输入条码、点上传图片、找到那个条码的文件夹、全选、回车</strong>。
+        现在把这些动作交给程序：导入导出的清单，点一下【开始执行】，它会按流程逐个条码自动完成，
+        并把每一条的成功 / 失败结果整理成表格导出。<br><br>
+        本说明讲三件事：程序如何还原《绘图1》里的流程图、怎么校准与使用、以及出问题时怎么处理。
+      </p>
+    </header>
+
+    <!-- 01 概览 -->
+    <section id="s1">
+      <div class="sec-head"><span class="sec-num">01</span><h2>概览：它做什么</h2></div>
+      <div class="prose">
+        <p>程序是一个带图形界面的 Windows 小工具，与洗衣管家软件配合使用，处理整批“给条码上传衣物照片”的工作。全过程只有三步：</p>
+        <ul>
+          <li><strong>导入清单</strong> —— 读取从系统导出的 CSV（<code>条码,文件位置</code>），自动识别编码与表头，逐行检查条码、文件夹是否存在、文件夹里有几个文件；</li>
+          <li><strong>自动执行</strong> —— 对清单中每一条，按流程图自动操作洗衣管家：输入条码 → 进入拍照页 → 上传图片 → 选好该条码文件夹内的全部照片；</li>
+          <li><strong>输出结果</strong> —— 实时状态列表 + 运行日志，结束后自动导出 CSV / Excel 结果表和日志文件，失败条目附现场截图。</li>
+        </ul>
+        <p>几个关键设计，是为了在你店里真实可用：</p>
+        <ul>
+          <li><strong>不靠固定死坐标</strong> —— 支持“窗口相对坐标”与“图像锚点”两种定位方式，窗口挪动后程序仍能找到按钮；</li>
+          <li><strong>精准模式（调试端口）</strong> —— 软件带调试端口运行时，程序直接按内部路由识别页面、写入条码、自动打开「选择图片」文件框、选中该订单全部照片后确认上传（与人工操作一致，照片多时自动分批）；并自动跳过已有照片的订单，防止重复上传；</li>
+          <li><strong>调试模式自动保障</strong> —— 每次运行前自动检查：软件没开就自动以调试模式启动；开着但没带调试参数会询问后自动重启；都不可行时自动退回兼容模式；</li>
+          <li><strong>随时可停</strong> —— 界面【停止】按钮之外，鼠标猛甩到屏幕左上角、或按 F12 都能紧急停下；</li>
+          <li><strong>先测一条</strong> —— 【测试第一条】只跑第一行，确认无误后再整批执行；</li>
+          <li><strong>失败不丢数据</strong> —— 失败条目记录原因并截图，修正后再次执行会从失败处继续，已成功的不会重跑。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 02 流程图还原 -->
+    <section id="s2">
+      <div class="sec-head"><span class="sec-num">02</span><h2>流程图还原</h2></div>
+      <div class="prose">
+        <p>《绘图1》画的是人工操作流程：操作员打开洗衣管家，按清单逐条进入拍照页上传照片。
+        程序把图中每一个动作、每一个判断，都翻译成了对应的自动操作：</p>
+      </div>
+
+      <figure class="flow-fig">
+        <div class="flow">
+          <div class="fstep"><span class="fs-num">STEP 1</span><span class="fs-txt">点击条码输入框</span><span class="fs-sub">定位到“请输入衣物条码号”</span></div>
+          <div class="farrow">→</div>
+          <div class="fstep"><span class="fs-num">STEP 2</span><span class="fs-txt">输入条码 · 回车</span><span class="fs-sub">逐条粘贴清单里的条码</span></div>
+          <div class="farrow">→</div>
+          <div class="fbranch">
+            <span class="fb-t">判断 · 页面状态</span>
+            <span>在首页 → 点「更多」；不在拍照页 → 点「拍照」</span>
+            <span>（自检循环，直到「上传图片」按钮出现）</span>
+          </div>
+          <div class="farrow">→</div>
+          <div class="fstep"><span class="fs-num">STEP 3</span><span class="fs-txt">点击「上传图片」</span><span class="fs-sub">等待“选择图片”对话框</span></div>
+          <div class="farrow">→</div>
+          <div class="fstep"><span class="fs-num">STEP 4</span><span class="fs-txt">输入存储位置</span><span class="fs-sub">粘贴该条码的文件夹路径 · 回车</span></div>
+          <div class="farrow">→</div>
+          <div class="fstep"><span class="fs-num">STEP 5</span><span class="fs-txt">全选 · 回车</span><span class="fs-sub">Ctrl+A 选中文件夹内全部文件并确认</span></div>
+        </div>
+        <div class="floop"><span class="lb">LOOP</span><span>回 STEP 1 处理下一个条码 —— 「循环操作，直至表格结束」。</span></div>
+        <figcaption>图 1 · 程序对每条记录执行的循环（与流程图步骤一一对应）</figcaption>
+      </figure>
+
+      <figure>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th style="width:38%">流程图中的原文</th><th>程序中的实现</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k">点击条码输入框</td><td>点击校准好的①号点（或图像锚点匹配到的输入框）</td></tr>
+            <tr><td class="k">输入表格中第一个条码，并单击回车</td><td>从清单逐条取条码，用剪贴板粘贴后回车（避免输入法干扰）</td></tr>
+            <tr><td class="k">当页面在首页时，点击更多，否则跳过</td><td>页面状态自检：看不到「上传图片」时，依次尝试「更多」→「拍照」切换页面</td></tr>
+            <tr><td class="k">点击拍照 / 不在拍照页</td><td>同一段自检循环里的重试逻辑（最多重试若干轮，可在 config 调整）</td></tr>
+            <tr><td class="k">点击上传图片</td><td>点击④号点，等待“选择图片”对话框出现</td></tr>
+            <tr><td class="k">输入条码对应的存储位置</td><td>把清单中该条的“文件位置”粘贴进对话框文件名框并回车</td></tr>
+            <tr><td class="k">全选文件夹内的文件并点击回车</td><td>Ctrl + A 全选，回车确认</td></tr>
+            <tr><td class="k">循环操作，直至表格结束</td><td>按清单顺序逐条执行，直到最后一行</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <figcaption>表 1 · 流程图原文与程序实现的对应关系</figcaption>
+      </figure>
+    </section>
+
+    <!-- 03 使用四步 -->
+    <section id="s3">
+      <div class="sec-head"><span class="sec-num">03</span><h2>使用四步</h2></div>
+      <div class="steps">
+        <div class="st">
+          <div class="sn">01</div>
+          <div>
+            <h3>导入清单</h3>
+            <p>点击【导入清单文件…】选择导出的 CSV。程序自动识别 GBK / UTF-8 编码、识别“条码 / 文件位置”两列，并逐行体检：</p>
+            <ul>
+              <li>条码为空 → 标记跳过；</li>
+              <li>文件夹不存在 / 文件夹为空 → 在说明列提示（仍会尝试执行）；</li>
+              <li>正常 → 显示文件数，状态“待执行”。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="st">
+          <div class="sn">02</div>
+          <div>
+            <h3>坐标校准（首次使用必做，约 1 分钟）</h3>
+            <p>打开洗衣管家并摆好窗口，点【坐标校准…】，采集 4 个操作点（① 条码输入框、② 左侧导航「更多」、③ 更多页「拍照」、④「上传图片」），并建议加采 3 个「页面标志」（⑥ 首页 / ⑦ 更多页 / ⑧ 拍照页，只截锚点）——用于让程序识别当前页面、避免多余点击。
+            采集时鼠标移到目标上，倒计时结束自动记录（也可按 F2 立即记录）。</p>
+          </div>
+        </div>
+        <div class="st">
+          <div class="sn">03</div>
+          <div>
+            <h3>开始执行</h3>
+            <p>先点【测试第一条】观察全流程是否正确；再【▶ 开始执行】处理剩余条目。运行中可【暂停 / 继续 / 停止】，急停可猛甩鼠标至屏幕左上角或按 F12。</p>
+          </div>
+        </div>
+        <div class="st">
+          <div class="sn">04</div>
+          <div>
+            <h3>查看与导出结果</h3>
+            <p>执行中列表实时更新状态，日志区全程记录。结束时会自动把结果导出到 <code>输出结果\</code> 文件夹（CSV + Excel + 日志），可点【导出执行结果】再次导出。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 界面导览 -->
+    <section id="s4">
+      <div class="sec-head"><span class="sec-num">04</span><h2>界面导览</h2></div>
+      <div class="prose">
+        <p>主界面从上到下四个区，按顺序使用即可：<strong>① 导入清单区</strong>（选择文件与识别摘要）、
+        <strong>② 识别结果 / 执行状态区</strong>（列表双击某行可直接打开该条码的文件夹）、
+        <strong>③ 执行控制区</strong>（开始 / 测试 / 暂停 / 停止 / 演练模式）、
+        <strong>④ 运行日志区</strong>。底部还有【坐标校准】【打开配置文件】【打开输出文件夹】【导出执行结果】。</p>
+      </div>
+      <figure>
+        <div class="shot shot-main"><img src="{{IMG_MAIN}}" alt="程序主界面截图"></div>
+        <figcaption>图 2 · 程序主界面（四个功能区 + 底部工具按钮）</figcaption>
+      </figure>
+      <div class="prose">
+        <p>小技巧：勾选<strong>「演练模式」</strong>后程序只移动鼠标、不真正点击输入，适合在正式运行前确认各校准点是否对准；
+        勾选<strong>「出错即暂停」</strong>可在某条出错时停下来人工处理，而不是继续跑后面的。</p>
+      </div>
+    </section>
+
+    <!-- 05 校准要点 -->
+    <section id="s5">
+      <div class="sec-head"><span class="sec-num">05</span><h2>坐标校准要点</h2></div>
+      <figure>
+        <div class="shot shot-cal"><img src="{{IMG_CAL}}" alt="坐标校准窗口截图"></div>
+        <figcaption>图 3 · 坐标校准窗口（采集 / 测试走位 / 截取锚点）</figcaption>
+      </figure>
+      <figure>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th style="width:22%">校准项目</th><th>对应位置</th><th style="width:30%">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k">① 条码输入框</td><td>拍照页左侧「请输入衣物条码号」输入框</td><td>点击进入输入状态的位置</td></tr>
+            <tr><td class="k">② 「更多」</td><td>左侧导航栏里的「更多」</td><td>用于自动切换页面（工作页均有）</td></tr>
+            <tr><td class="k">③ 「拍照」</td><td>更多功能页 →「收衣操作」中的「拍照」</td><td>进入拍照页的入口</td></tr>
+            <tr><td class="k">④ 「上传图片」</td><td>拍照页右下角</td><td>打开“选择图片”对话框</td></tr>
+            <tr><td class="k">⑤ 对话框文件名框</td><td>“选择图片”对话框底部“文件名”输入框</td><td>选配，粘贴路径更稳</td></tr>
+            <tr><td class="k">⑥ 首页标志</td><td>首页「收衣」大卡片上的一小块固定内容</td><td>页面识别：判断“当前在首页”（只截锚点）</td></tr>
+            <tr><td class="k">⑦ 更多页标志</td><td>更多功能页某个功能格子图标/文字</td><td>页面识别：判断“当前在更多页”（只截锚点）</td></tr>
+            <tr><td class="k">⑧ 拍照页标志</td><td>拍照页「请输入衣物条码号」输入框或「查询」按钮附近</td><td>页面识别：判断“当前在拍照页”（只截锚点）</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <figcaption>表 2 · 操作点与页面标志（页面标志只需截取锚点）</figcaption>
+      </figure>
+      <div class="prose">
+        <ul>
+          <li><strong>模式选择</strong>：默认「窗口相对」——窗口平移后仍有效，建议保持；显示器缩放比例不要中途更改。</li>
+          <li><strong>窗口识别</strong>：程序会自动锁定「洗衣管家」主窗口（避开本工具与浏览器窗口）；采集时若提示“该点不在窗口范围内”，说明点偏了或窗口不对，请重新采集。</li>
+          <li><strong>页面识别</strong>：程序执行时先识别“当前在哪一页”再决定动作——在首页才点「更多」、在更多页才点「拍照」、已在拍照页直接上传，避免多余点击；可随时用【测试页面识别】验证（本机已预置首页/更多页/拍照页指纹，无需手动截取 ⑥⑦⑧）。</li>
+          <li><strong>锚点（进阶）</strong>：对每个按钮可【截取锚点】保存按钮小图；勾选“启用图像锚点”后程序优先用图像找按钮，更稳。</li>
+          <li><strong>验证</strong>：每采集一项点一次【测试走位】，鼠标会移到该点，肉眼确认对准后再保存。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 06 执行结果与导出 -->
+    <section id="s6">
+      <div class="sec-head"><span class="sec-num">06</span><h2>执行结果与导出</h2></div>
+      <figure>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th style="width:34%">输出文件</th><th>内容</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k">执行结果_时间戳.csv</td><td>每条记录：序号、条码、文件夹位置、文件数、结果、耗时、备注（UTF-8 BOM，Excel 直接打开不乱码）</td></tr>
+            <tr><td class="k">执行结果_时间戳.xlsx</td><td>同上，另含“汇总”页（成功 / 失败 / 跳过数量）</td></tr>
+            <tr><td class="k">运行日志_时间戳.txt</td><td>运行全过程日志，用于复盘与排查</td></tr>
+            <tr><td class="k">出错截图\</td><td>每条失败的现场截图（条码 + 时间命名）</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <figcaption>表 3 · 输出结果文件一览（位于“输出结果”文件夹）</figcaption>
+      </figure>
+      <div class="prose">
+        <p>列表中的状态分为四类：<strong>成功 / 失败 / 跳过（条码或文件夹无效）/ 进行中</strong>。
+        再次执行时，已成功的条目不会重复执行，失败的可修正后重跑。</p>
+      </div>
+    </section>
+
+    <!-- 07 配置与调参 -->
+    <section id="s7">
+      <div class="sec-head"><span class="sec-num">07</span><h2>配置与调参</h2></div>
+      <div class="prose">
+        <p>结果都保存在程序目录的 <code>config.json</code> 里（点【打开配置文件】可直接编辑，保存后重新打开程序生效）。
+        常见调整：</p>
+      </div>
+      <figure>
+        <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th style="width:36%">想改什么</th><th>改哪里</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>等待时间（电脑慢时调大）</td><td class="k">timing.after_enter / dialog_timeout 等</td></tr>
+            <tr><td>全局速度倍率（越大越慢越稳）</td><td class="k">timing.speed_factor</td></tr>
+            <tr><td>窗口标题关键字</td><td class="k">window.title_keyword</td></tr>
+            <tr><td>对话框标题关键字</td><td class="k">dialog.title_keywords（默认：选择图片 / 打开 / Open）</td></tr>
+            <tr><td>坐标模式 / 各点坐标</td><td class="k">window.coords_mode / points.*（建议用校准界面改）</td></tr>
+            <tr><td>失败策略 / 截图 / 演练</td><td class="k">options.*（界面上也有对应开关）</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <figcaption>表 4 · 常见配置修改对照</figcaption>
+      </figure>
+    </section>
+
+    <!-- 08 常见问题 -->
+    <section id="s8">
+      <div class="sec-head"><span class="sec-num">08</span><h2>常见问题</h2></div>
+      <dl class="faq">
+        <dt><span class="q">Q1</span>点【开始执行】提示找不到窗口？</dt>
+        <dd>请先打开洗衣管家软件再执行；若窗口标题变化，可在 <code>config.json</code> 的 <code>window.title_keyword</code> 中改成标题里稳定出现的字样。</dd>
+        <dt><span class="q">Q2</span>点击的位置偏了 / 总点不中？</dt>
+        <dd>多为显示缩放或窗口被移动缩放引起。重新校准相关项目，或启用图像锚点模式；同时尽量保持显示器缩放设置不变。</dd>
+        <dt><span class="q">Q3</span>「上传图片」后没有出现文件对话框？</dt>
+        <dd>把 <code>timing.dialog_timeout</code> 调大（如 12），并确认④号点确实落在「上传图片」按钮上。</dd>
+        <dt><span class="q">Q4</span>某一条失败了怎么办？</dt>
+        <dd>看日志与 <code>输出结果\出错截图\</code> 里的截图定位原因，处理后在界面点【开始执行】——已成功的会跳过，只重跑未完成部分。</dd>
+        <dt><span class="q">Q5</span>清单里“文件位置”与实际照片目录不一致？</dt>
+        <dd>程序严格按清单中的路径执行。请以实际照片所在的文件夹（例如 <code>E:\收衣照片\&lt;条码&gt;</code>）为准导出清单；导入时的“文件夹不存在”提示会帮你提前发现。</dd>
+        <dt><span class="q">Q6</span>中途想停怎么办？</dt>
+        <dd>点界面的【停止】；或把鼠标快速甩到屏幕左上角（FailSafe 急停）；或按 F12（需安装 keyboard 库，已预装）。停止后建议人工看一下软件当前页面，再继续。</dd>
+        <dt><span class="q">Q7</span>双击启动程序时黑窗口一闪、或提示“'-3' 不是内部或外部命令”？</dt>
+        <dd>这是早期启动脚本的编码/换行兼容问题（导致 Windows 把启动命令拆断），目前版本的 <code>启动程序.bat</code> 已重写修复（纯英文兼容脚本 + 依赖自检 + 崩溃弹窗）。若再遇到启动异常，请查看程序目录下自动生成的 <code>启动错误日志.txt</code>。</dd>
+        <dt><span class="q">Q8</span>点【开始执行】后全是“成功”，但洗衣管家毫无反应？</dt>
+        <dd>早期版本存在“窗口识别错误 / 点击落空却仍报成功”的问题。新版已修复三层：①自动避开本工具与浏览器窗口，锁定「洗衣管家」主窗口并强制切到前台，激活失败会直接报错；②「选择图片」对话框未出现或未关闭时，该条直接判定失败（不再假成功）；③演练模式结果统一带 <code>[演练]</code> 标记。若曾用旧版采集过校准点（坐标里可能出现负数），请重新校准一次。</dd>
+                <dt><span class="q">Q10</span>程序怎么保证不重复上传照片？</dt>
+        <dd>精准模式会在每条订单加载后检测“已有照片数量”：已有照片的订单自动跳过（结果里显示“跳过：订单已有 N 张照片”）；演练模式下会逐条预检查并显示每个订单已有多少张照片。如需强制上传，可在 config.json 中把 <code>options.skip_if_has_photos</code> 设为 false。</dd>
+        <dt><span class="q">Q11</span>如果调试端口连不上？</dt>
+        <dd>一般不用管：每次运行前程序会自动确保调试模式——软件没开会自动以调试模式启动；开着但没带参数会弹窗确认后自动重启（正常关闭失败时自动强制结束进程再重启，过程实时显示日志）；实在连不上时自动退回“图像锚点/坐标”模式，功能不受影响。</dd>
+        <dt><span class="q">Q12</span>怎么安装到电脑上 / 换电脑怎么办？</dt>
+        <dd>使用随附的安装包（<code>安装包\洗衣管家上传助手_安装包_v1.1.exe</code>）：双击安装、中文向导、无需管理员权限，装完自动创建桌面快捷方式；包内已含全部运行依赖，目标电脑无需安装 Python。</dd>
+<dt><span class="q">Q9</span>怎么避免程序点来点去、做多余的操作？</dt>
+        <dd>在【坐标校准】里采集 ⑥⑦⑧ 三个「页面标志」（只截锚点），并勾选“启用图像锚点与页面识别”。运行时程序会先识别当前页面：在首页→点「更多」；在更多页→点「拍照」；已在拍照页→直接进入上传，不再有多余点击。可随时用【测试页面识别】按钮验证。</dd>
+      </dl>
+    </section>
+
+    <!-- 09 安全须知 -->
+    <section id="s9">
+      <div class="sec-head"><span class="sec-num">09</span><h2>安全须知</h2></div>
+      <div class="prose">
+        <ul>
+          <li>程序只模拟鼠标与键盘操作，<strong>不直接修改洗衣管家的数据</strong>；但它会真实操作软件，首次使用务必先【测试第一条】；</li>
+          <li>执行期间请勿手动抢鼠标键盘，避免与程序操作“打架”；</li>
+          <li>建议在业务空闲时段首次批量运行；分批小量跑顺后再全量；</li>
+          <li>急停后（左上角 / F12 / 停止按钮），人工确认软件状态、必要时手动纠正后再继续。</li>
+        </ul>
+      </div>
+      <div class="note">
+        <div class="lab">下一步建议</div>
+        <p>1. 在用餐高峰前先跑 3～5 条试运行，观察耗时（单条约 10～20 秒，视电脑而定）；</p>
+        <p>2. 如照片目录规则变化（如“桌面”与“收衣照片”），同步调整清单导出规则；</p>
+        <p>3. 如需把流程扩到更多电脑 / 更多操作步骤，可基于现有步骤配置扩展。</p>
+      </div>
+    </section>
+
+    <div class="colophon">
+      洗衣管家 · 照片批量上传助手 v1.0 —— 程序说明文档<br>
+      依据资料：《绘图1》操作流程图、《导出清单》CSV 格式；适用：Windows 桌面版洗衣管家。<br>
+      <span class="mono">配套文件：README.md · requirements.txt · 启动程序.bat · config.json（校准后生成）</span>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
