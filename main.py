@@ -51,7 +51,7 @@ from ui_theme import PALETTE as C, FONTS, STATUS_COLORS, apply_theme
 import updater
 
 APP_TITLE = "洗衣管家 · 照片批量上传助手"
-VERSION = "1.10"
+VERSION = "1.11"
 
 _NO_WINDOW = 0x08000000  # subprocess.CREATE_NO_WINDOW
 
@@ -68,6 +68,204 @@ COLOR_OK = STATUS_COLORS["成功"]
 COLOR_FAIL = STATUS_COLORS["失败"]
 COLOR_SKIP = STATUS_COLORS["跳过"]
 COLOR_RUN = STATUS_COLORS["进行中"]
+
+
+class MonitorWindow(tk.Toplevel):
+    """执行监视悬浮窗：上传执行期间始终置顶，实时显示进度 / 当前条码 / 计数 / 耗时 / 日志。
+    可拖动、可最小化，带暂停 / 停止快捷按钮；采用 WS_EX_NOACTIVATE 不抢占焦点，
+    不会干扰对洗衣管家的自动化操作。"""
+
+    WIDTH = 352
+
+    def __init__(self, master, on_pause=None, on_stop=None):
+        super().__init__(master)
+        self._on_pause = on_pause
+        self._on_stop = on_stop
+        self.closed = False
+        self._minimized = False
+        self._t0 = time.time()
+        self._total = 1
+        self._logs = []
+        self.configure(bg=C["accent"])
+        self.overrideredirect(True)
+        self.attributes("-topmost", True)
+        self.withdraw()
+        self._build()
+        self._place_bottom_right()
+        self.after(1000, self._tick)
+
+    # ---------- 构建 ----------
+    def _build(self):
+        self._body = tk.Frame(self, bg=C["surface"], highlightthickness=1,
+                              highlightbackground=C["accent_line"])
+        self._body.pack(fill="both", expand=True)
+        head = tk.Frame(self._body, bg=C["accent"], cursor="fleur")
+        head.pack(fill="x")
+        head.bind("<Button-1>", self._drag_start)
+        head.bind("<B1-Motion>", self._drag_move)
+        tk.Label(head, text="执行监视", bg=C["accent"], fg="#FFFFFF",
+                 font=FONTS["card"]).pack(side="left", padx=(12, 6), pady=6)
+        self._badge = tk.Label(head, text="", bg=C["accent"], fg="#DFF2D0",
+                               font=FONTS["chip"])
+        self._badge.pack(side="left")
+        tk.Button(head, text="✕", command=self.close, bd=0, bg=C["accent"],
+                  fg="#E8F5DC", activebackground=C["accent_hover"],
+                  activeforeground="#FFFFFF", font=FONTS["small"],
+                  cursor="hand2").pack(side="right", padx=(2, 8), pady=4)
+        tk.Button(head, text="—", command=self.toggle_min, bd=0, bg=C["accent"],
+                  fg="#E8F5DC", activebackground=C["accent_hover"],
+                  activeforeground="#FFFFFF", font=FONTS["small"],
+                  cursor="hand2").pack(side="right", pady=4)
+        self._detail = tk.Frame(self._body, bg=C["surface"])
+        self._detail.pack(fill="both", expand=True)
+        box = tk.Frame(self._detail, bg=C["surface"])
+        box.pack(fill="x", padx=14, pady=(10, 2))
+        style_bar = "Monitor.Horizontal.TProgressbar"
+        s = ttk.Style(self)
+        s.configure(style_bar, thickness=10, troughcolor=C["accent_soft"],
+                    background=C["accent"], bordercolor=C["accent_line"],
+                    lightcolor=C["accent"], darkcolor=C["accent"])
+        self._bar = ttk.Progressbar(box, mode="determinate", maximum=100,
+                                    style=style_bar)
+        self._bar.pack(fill="x")
+        self._count = tk.Label(box, text="准备中…", bg=C["surface"], fg=C["ink"],
+                               font=FONTS["ui"], anchor="w")
+        self._count.pack(fill="x", pady=(6, 0))
+        self._cur = tk.Label(box, text="等待开始…", bg=C["surface"], fg=C["ink_2"],
+                             font=FONTS["small"], anchor="w")
+        self._cur.pack(fill="x", pady=(1, 0))
+        self._log = tk.Label(self._detail, text="", bg=C["surface_soft"], fg=C["muted"],
+                             font=FONTS["log"], anchor="nw", justify="left",
+                             wraplength=self.WIDTH - 32)
+        self._log.pack(fill="x", padx=14, pady=(6, 4))
+        btns = tk.Frame(self._detail, bg=C["surface"])
+        btns.pack(fill="x", padx=14, pady=(2, 10))
+        self._btn_pause = tk.Button(btns, text="暂停", command=self._do_pause,
+                                    bd=0, bg=C["accent_soft"], fg=C["accent_ink"],
+                                    activebackground=C["accent_line"],
+                                    font=FONTS["small"], cursor="hand2", padx=12)
+        self._btn_pause.pack(side="left")
+        self._btn_stop = tk.Button(btns, text="停止", command=self._do_stop,
+                                   bd=0, bg=C["danger_soft"], fg=C["danger"],
+                                   activebackground=C["danger_line"],
+                                   font=FONTS["small"], cursor="hand2", padx=12)
+        self._btn_stop.pack(side="left", padx=(8, 0))
+        self._elapsed = tk.Label(btns, text="", bg=C["surface"], fg=C["muted"],
+                                 font=FONTS["small"])
+        self._elapsed.pack(side="right")
+
+    # ---------- 窗口行为 ----------
+    def _place_bottom_right(self):
+        self.update_idletasks()
+        h = max(self.winfo_reqheight(), 120)
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        self.geometry(f"{self.WIDTH}x{h}+{sw - self.WIDTH - 24}+{sh - h - 72}")
+
+    def _noactivate(self):
+        """WS_EX_NOACTIVATE：窗口永不夺焦点，点击也只触发回调。"""
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            hwnd = user32.GetParent(self.winfo_id())
+            style = user32.GetWindowLongPtrW(hwnd, -20)      # GWL_EXSTYLE
+            user32.SetWindowLongPtrW(hwnd, -20,
+                                     style | 0x08000000 | 0x00000008)  # NOACTIVATE|TOPMOST
+        except Exception:
+            pass
+
+    def show(self):
+        if self.closed:
+            return
+        self.deiconify()
+        self._noactivate()
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            hwnd = user32.GetParent(self.winfo_id())
+            # HWND_TOPMOST + SWP_NOACTIVATE：置顶但不激活
+            user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x2 | 0x1 | 0x10)
+        except Exception:
+            pass
+        self.lift()
+        try:
+            self.master.focus_set()      # 焦点还给主窗口
+        except Exception:
+            pass
+
+    def close(self):
+        self.closed = True
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
+    def _tick(self):
+        if self.closed:
+            return
+        try:
+            self.attributes("-topmost", True)   # 定时重申置顶
+        except Exception:
+            pass
+        if not self._minimized:
+            sec = int(time.time() - self._t0)
+            self._elapsed.configure(text=f"已用时 {sec // 60:02d}:{sec % 60:02d}")
+        self.after(1000, self._tick)
+
+    def _drag_start(self, e):
+        self._drag = (e.x, e.y)
+
+    def _drag_move(self, e):
+        if getattr(self, "_drag", None):
+            self.geometry(f"+{e.x_root - self._drag[0]}+{e.y_root - self._drag[1]}")
+
+    def toggle_min(self):
+        self._minimized = not self._minimized
+        if self._minimized:
+            self._detail.pack_forget()
+            self.geometry(f"{self.WIDTH}x{self._body.winfo_reqheight()}")
+        else:
+            self._detail.pack(fill="both", expand=True)
+            self._place_bottom_right()
+
+    def _do_pause(self):
+        if self._on_pause:
+            self._on_pause()
+
+    def _do_stop(self):
+        if self._on_stop:
+            self._on_stop()
+
+    # ---------- 数据刷新 ----------
+    def set_total(self, total, dry=False):
+        self._total = max(int(total), 1)
+        self._badge.configure(text="演练模式" if dry else "实时监视")
+
+    def update_counts(self, done, ok, fail, skip):
+        pct = min(int(done * 100 / self._total), 100)
+        self._bar.configure(value=pct)
+        self._count.configure(
+            text=f"{done}/{self._total}    成功 {ok}    失败 {fail}    跳过 {skip}")
+        if self._minimized:
+            self._badge.configure(text=f"{done}/{self._total}")
+
+    def set_current(self, text):
+        self._cur.configure(text=text)
+
+    def add_log(self, line):
+        self._logs.append(line)
+        self._logs = self._logs[-3:]
+        self._log.configure(text="\n".join(self._logs))
+
+    def set_paused(self, paused):
+        self._btn_pause.configure(text="继续" if paused else "暂停")
+        self._cur.configure(text="已暂停（点【继续】恢复）" if paused else "继续执行…")
+
+    def finish(self, text):
+        self._cur.configure(text=text)
+        self._btn_pause.configure(state="disabled")
+        self._btn_stop.configure(state="disabled")
+        self._badge.configure(text="已结束")
+        self.after(30000, self.close)        # 结束 30 秒后自动收起
 
 
 class App(tk.Tk):
@@ -100,6 +298,7 @@ class App(tk.Tk):
         self.update_label = None
         self.update_accel = False
         self.downloading = False
+        self.monitor = None
         if self.cfg["options"].get("check_update_on_start", True):
             self.after(1500, self._auto_check_update)
         self.after(120, self._drain_queue)
@@ -308,15 +507,19 @@ class App(tk.Tk):
                 if kind == "log":
                     ts = time.strftime("%H:%M:%S")
                     self._append_log(f"[{ts}] {payload}")
+                    self._monitor_log(f"[{ts}] {payload}")
                 elif kind == "row":
                     task, success, msg = payload
                     self._update_row(task)
+                    self._monitor_sync()
                 elif kind == "row_start":
                     task = payload
                     self._update_row(task)
+                    self._monitor_sync(task)
                 elif kind == "progress":
                     done = sum(1 for t in self.tasks if t.status in ("成功", "失败", "跳过"))
                     self.progress.configure(value=done)
+                    self._monitor_sync()
                 elif kind == "done":
                     self._on_run_finished(payload)
                 elif kind == "update_result":
@@ -791,6 +994,7 @@ class App(tk.Tk):
         self.progress.configure(maximum=max(len(self.tasks), 1), value=done_before)
 
         self._set_running_ui(True)
+        self._monitor_open(total, only_first, bool(self.var_dry_run.get()))
 
         def worker():
             try:
@@ -829,11 +1033,13 @@ class App(tk.Tk):
             self.btn_pause.configure(text="暂停")
             self.status.set("已继续。")
             self.log("已继续执行。")
+            self._monitor_paused(False)
         else:
             self.control.pause()
             self.btn_pause.configure(text="继续")
             self.status.set("已暂停。处理完当前步骤后停在原地，点击【继续】恢复。")
             self.log("已暂停（当前步骤完成后生效）。")
+            self._monitor_paused(True)
 
     def on_stop(self):
         if self.control:
@@ -842,12 +1048,69 @@ class App(tk.Tk):
             self.status.set("正在停止…")
             self.log("收到停止指令，正在安全停止…")
 
+    # ================= 执行监视悬浮窗 =================
+    def _monitor_open(self, total, only_first, dry):
+        """执行开始：弹出（或重建）置顶监视窗。"""
+        try:
+            if self.monitor is not None:
+                try:
+                    self.monitor.close()
+                except Exception:
+                    pass
+            self.monitor = MonitorWindow(self, on_pause=self.on_pause, on_stop=self.on_stop)
+            self.monitor.set_total(min(total, 1) if only_first else total, dry)
+            self.monitor.show()
+        except Exception as e:
+            self.monitor = None
+            self.log(f"[警告] 监视窗口创建失败：{e}")
+
+    def _monitor_sync(self, current_task=None):
+        """把最新计数 / 当前条码同步到监视窗。"""
+        mon = self.monitor
+        if mon is None or mon.closed:
+            return
+        ok = sum(1 for t in self.tasks if t.status == "成功")
+        fail = sum(1 for t in self.tasks if t.status == "失败")
+        skip = sum(1 for t in self.tasks if t.status == "跳过")
+        mon.update_counts(ok + fail + skip, ok, fail, skip)
+        if current_task is not None:
+            mon.set_current(f"正在处理：{current_task.barcode}（第 {current_task.index} 条）")
+
+    def _monitor_log(self, line):
+        mon = self.monitor
+        if mon is None or mon.closed:
+            return
+        try:
+            mon.add_log(line)
+        except Exception:
+            pass
+
+    def _monitor_paused(self, paused):
+        mon = self.monitor
+        if mon is None or mon.closed:
+            return
+        try:
+            mon.set_paused(paused)
+        except Exception:
+            pass
+
+    def _monitor_finish(self, stats, dur):
+        mon = self.monitor
+        if mon is None or mon.closed:
+            return
+        try:
+            mon.finish(f"执行结束：成功 {stats.get('ok', 0)} / 失败 {stats.get('fail', 0)}"
+                       f" / 跳过 {stats.get('skip', 0)}，用时 {dur:.0f} 秒")
+        except Exception:
+            pass
+
     def _on_run_finished(self, stats):
         self._set_running_ui(False)
         dur = time.time() - self.run_started_at if self.run_started_at else 0
         prefix = "执行结束（演练模式·未真实操作）：" if self.cfg["options"].get("dry_run") else "执行结束："
         self.status.set(prefix + f"成功 {stats.get('ok', 0)} / 失败 {stats.get('fail', 0)} / "
                         f"跳过 {stats.get('skip', 0)}，用时 {dur:.0f} 秒")
+        self._monitor_finish(stats, dur)
         # 自动导出结果
         try:
             paths = self._export_results(auto=True)

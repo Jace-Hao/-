@@ -6,17 +6,20 @@ proj = r"E:\软件开发\洗衣管家上传助手"
 bt = os.path.join(proj, "构建工具")
 tmp = r"E:\软件开发\.openclaw\tmp"
 pkg = os.path.join(tmp, "pkg")
-inno_lang = r"C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+inno_lang = r"C:\Program Files (x86)\Inno Setup 6\Languages"
 iscc = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 # 1) 安装中文语言包
-shutil.copy2(os.path.join(bt, "ChineseSimplified.isl"), inno_lang)
-print("isl installed ->", os.path.exists(inno_lang))
+_isl_src = os.path.join(bt, "ChineseSimplified.isl")
+_isl_dest = os.path.join(inno_lang, "ChineseSimplified.isl")
+if not (os.path.exists(_isl_dest) and open(_isl_dest, "rb").read() == open(_isl_src, "rb").read()):
+    shutil.copy2(_isl_src, _isl_dest)
+print("isl installed ->", os.path.exists(_isl_dest))
 
 # 2) 写 .iss（UTF-8 BOM）
 iss = u"""; 洗衣管家 · 照片批量上传助手 安装脚本
 #define MyAppName "洗衣管家 · 照片批量上传助手"
-#define MyAppVersion "1.10"
+#define MyAppVersion "1.11"
 #define MyAppPublisher "星期衣精致洗衣"
 #define MyAppExeName "洗衣管家上传助手.exe"
 
